@@ -1,0 +1,268 @@
+name: {{ name }}
+source_type: {{ source_type }}
+description: "{{ description }}"
+enabled: {{ enabled | lower }}
+{%- if tags %}
+
+tags:
+{%- for key, value in tags.items() %}
+  {{ key }}: {{ value }}
+{%- endfor %}
+{%- endif %}
+{%- if connection and (connection.host or connection.url or connection.secret_scope) %}
+
+connection:
+{%- if connection.host is not none %}
+  host: {{ connection.host }}
+{%- endif %}
+{%- if connection.port is not none %}
+  port: {{ connection.port }}
+{%- endif %}
+{%- if connection.database is not none %}
+  database: {{ connection.database }}
+{%- endif %}
+{%- if connection.driver is not none %}
+  driver: {{ connection.driver }}
+{%- endif %}
+{%- if connection.url is not none %}
+  url: {{ connection.url }}
+{%- endif %}
+{%- if connection.secret_scope is not none %}
+  secret_scope: {{ connection.secret_scope }}
+{%- endif %}
+{%- if connection.secret_key_user is not none %}
+  secret_key_user: {{ connection.secret_key_user }}
+{%- endif %}
+{%- if connection.secret_key_password is not none %}
+  secret_key_password: {{ connection.secret_key_password }}
+{%- endif %}
+{%- if connection.properties %}
+  properties:
+{%- for key, value in connection.properties.items() %}
+    {{ key }}: "{{ value }}"
+{%- endfor %}
+{%- endif %}
+{%- endif %}
+
+extract:
+  load_type: {{ extract.load_type }}
+{%- if extract.table is not none %}
+  table: {{ extract.table }}
+{%- endif %}
+{%- if extract.query is not none %}
+  query: {{ extract.query }}
+{%- endif %}
+{%- if extract.partition_column is not none %}
+  partition_column: {{ extract.partition_column }}
+{%- endif %}
+{%- if extract.num_partitions != 1 %}
+  num_partitions: {{ extract.num_partitions }}
+{%- endif %}
+{%- if extract.fetch_size != 10000 %}
+  fetch_size: {{ extract.fetch_size }}
+{%- endif %}
+{%- if extract.path is not none %}
+  path: {{ extract.path }}
+{%- endif %}
+{%- if extract.format != 'parquet' %}
+  format: {{ extract.format }}
+{%- endif %}
+{%- if extract.auto_loader %}
+  auto_loader: true
+{%- endif %}
+{%- if extract.checkpoint_path is not none %}
+  checkpoint_path: {{ extract.checkpoint_path }}
+{%- endif %}
+{%- if extract.format_options %}
+  format_options:
+{%- for key, value in extract.format_options.items() %}
+    {{ key }}: "{{ value }}"
+{%- endfor %}
+{%- endif %}
+{%- if extract.base_url is not none %}
+  base_url: {{ extract.base_url }}
+{%- endif %}
+{%- if extract.endpoint is not none %}
+  endpoint: {{ extract.endpoint }}
+{%- endif %}
+{%- if extract.method != 'GET' %}
+  method: {{ extract.method }}
+{%- endif %}
+{%- if extract.timeout_seconds != 30 %}
+  timeout_seconds: {{ extract.timeout_seconds }}
+{%- endif %}
+{%- if extract.max_retries != 3 %}
+  max_retries: {{ extract.max_retries }}
+{%- endif %}
+{%- if extract.retry_backoff_factor != 2.0 %}
+  retry_backoff_factor: {{ extract.retry_backoff_factor }}
+{%- endif %}
+{%- if extract.response_root_path != 'data' %}
+  response_root_path: {{ extract.response_root_path }}
+{%- endif %}
+{%- if extract.headers %}
+  headers:
+{%- for key, value in extract.headers.items() %}
+    {{ key }}: "{{ value }}"
+{%- endfor %}
+{%- endif %}
+{%- if extract.params %}
+  params:
+{%- for key, value in extract.params.items() %}
+    {{ key }}: {{ value }}
+{%- endfor %}
+{%- endif %}
+{%- if extract.kafka_bootstrap_servers is not none %}
+  kafka_bootstrap_servers: {{ extract.kafka_bootstrap_servers }}
+{%- endif %}
+{%- if extract.kafka_topic is not none %}
+  kafka_topic: {{ extract.kafka_topic }}
+{%- endif %}
+{%- if extract.kafka_consumer_group is not none %}
+  kafka_consumer_group: {{ extract.kafka_consumer_group }}
+{%- endif %}
+{%- if extract.starting_offsets != 'earliest' %}
+  starting_offsets: {{ extract.starting_offsets }}
+{%- endif %}
+{%- if extract.kafka_options %}
+  kafka_options:
+{%- for key, value in extract.kafka_options.items() %}
+    {{ key }}: "{{ value }}"
+{%- endfor %}
+{%- endif %}
+{%- if extract.event_hub_connection_string_key is not none %}
+  event_hub_connection_string_key: {{ extract.event_hub_connection_string_key }}
+{%- endif %}
+{%- if extract.event_hub_consumer_group != '$Default' %}
+  event_hub_consumer_group: {{ extract.event_hub_consumer_group }}
+{%- endif %}
+{%- if extract.watermark %}
+  watermark:
+    column: {{ extract.watermark.column }}
+    type: {{ extract.watermark.type }}
+{%- if extract.watermark.default_value is not none %}
+    default_value: "{{ extract.watermark.default_value }}"
+{%- endif %}
+{%- endif %}
+{%- if extract.auth %}
+  auth:
+    type: {{ extract.auth.type }}
+{%- if extract.auth.secret_scope is not none %}
+    secret_scope: {{ extract.auth.secret_scope }}
+{%- endif %}
+{%- if extract.auth.secret_key_token is not none %}
+    secret_key_token: {{ extract.auth.secret_key_token }}
+{%- endif %}
+{%- if extract.auth.secret_key_client_id is not none %}
+    secret_key_client_id: {{ extract.auth.secret_key_client_id }}
+{%- endif %}
+{%- if extract.auth.secret_key_client_secret is not none %}
+    secret_key_client_secret: {{ extract.auth.secret_key_client_secret }}
+{%- endif %}
+{%- if extract.auth.token_url is not none %}
+    token_url: {{ extract.auth.token_url }}
+{%- endif %}
+{%- if extract.auth.header_name != 'Authorization' %}
+    header_name: {{ extract.auth.header_name }}
+{%- endif %}
+{%- if extract.auth.header_prefix != 'Bearer' %}
+    header_prefix: {{ extract.auth.header_prefix }}
+{%- endif %}
+{%- endif %}
+{%- if extract.pagination %}
+  pagination:
+    type: {{ extract.pagination.type }}
+    page_size: {{ extract.pagination.page_size }}
+{%- if extract.pagination.max_pages is not none %}
+    max_pages: {{ extract.pagination.max_pages }}
+{%- endif %}
+{%- if extract.pagination.type == 'offset' %}
+    offset_param: {{ extract.pagination.offset_param }}
+    limit_param: {{ extract.pagination.limit_param }}
+{%- endif %}
+{%- if extract.pagination.type == 'cursor' %}
+    cursor_param: {{ extract.pagination.cursor_param }}
+{%- if extract.pagination.cursor_response_path is not none %}
+    cursor_response_path: {{ extract.pagination.cursor_response_path }}
+{%- endif %}
+{%- endif %}
+    data_response_path: {{ extract.pagination.data_response_path }}
+{%- endif %}
+
+target:
+  catalog: {{ target.catalog }}
+  schema: {{ target.schema_name }}
+  table: {{ target.table }}
+{%- if target.partition_by %}
+  partition_by:
+{%- for col in target.partition_by %}
+    - {{ col }}
+{%- endfor %}
+{%- endif %}
+{%- if target.z_order_by %}
+  z_order_by:
+{%- for col in target.z_order_by %}
+    - {{ col }}
+{%- endfor %}
+{%- endif %}
+{%- if target.table_properties %}
+  table_properties:
+{%- for key, value in target.table_properties.items() %}
+    {{ key }}: "{{ value }}"
+{%- endfor %}
+{%- endif %}
+{%- if target.metadata_columns %}
+  metadata_columns:
+{%- for col in target.metadata_columns %}
+    - name: {{ col.name }}
+      expression: "{{ col.expression }}"
+{%- endfor %}
+{%- endif %}
+  schema_evolution:
+    mode: {{ target.schema_evolution.mode }}
+{%- if target.schema_evolution.mode == 'rescue' %}
+    rescued_data_column: {{ target.schema_evolution.rescued_data_column }}
+{%- endif %}
+  quality:
+    enabled: {{ target.quality.enabled | lower }}
+{%- if target.quality.quarantine_threshold_pct != 10.0 %}
+    quarantine_threshold_pct: {{ target.quality.quarantine_threshold_pct }}
+{%- endif %}
+  cdc:
+    enabled: {{ target.cdc.enabled | lower }}
+    mode: {{ target.cdc.mode }}
+{%- if target.cdc.primary_keys %}
+    primary_keys:
+{%- for key in target.cdc.primary_keys %}
+      - {{ key }}
+{%- endfor %}
+{%- endif %}
+{%- if target.cdc.sequence_column is not none %}
+    sequence_column: {{ target.cdc.sequence_column }}
+{%- endif %}
+{%- if target.cdc.exclude_columns_from_hash %}
+    exclude_columns_from_hash:
+{%- for col in target.cdc.exclude_columns_from_hash %}
+      - {{ col }}
+{%- endfor %}
+{%- endif %}
+{%- if target.cdc.delete_condition_column is not none %}
+    delete_condition_column: {{ target.cdc.delete_condition_column }}
+    delete_condition_value: {{ target.cdc.delete_condition_value }}
+{%- endif %}
+{%- if target.landing.path is not none %}
+  landing:
+    path: {{ target.landing.path }}
+{%- if target.landing.archive_path is not none %}
+    archive_path: {{ target.landing.archive_path }}
+{%- endif %}
+    retention_days: {{ target.landing.retention_days }}
+    cleanup_enabled: {{ target.landing.cleanup_enabled | lower }}
+{%- endif %}
+{%- if schedule %}
+
+schedule:
+  cron_expression: "{{ schedule.cron_expression }}"
+  timezone: {{ schedule.timezone }}
+  pause_status: {{ schedule.pause_status }}
+{%- endif %}

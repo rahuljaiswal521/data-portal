@@ -1,0 +1,112 @@
+@import "tailwindcss";
+
+:root {
+  /* Anthropic-inspired palette */
+  --bg-primary: #faf9f5;
+  --bg-secondary: #f0efe8;
+  --bg-dark: #191918;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f7f6f0;
+
+  --text-primary: #191918;
+  --text-secondary: #6b6b65;
+  --text-tertiary: #9c9c95;
+  --text-inverse: #faf9f5;
+
+  --accent: #d97757;
+  --accent-hover: #c4613f;
+  --accent-light: rgba(217, 119, 87, 0.1);
+
+  --border: #e8e7e0;
+  --border-hover: #d1d0c8;
+
+  --success: #3a7d44;
+  --warning: #c4873b;
+  --error: #c44b3b;
+  --info: #3b7bc4;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-full: 9999px;
+
+  --shadow-sm: 0 1px 2px rgba(25, 25, 24, 0.04);
+  --shadow-md: 0 2px 8px rgba(25, 25, 24, 0.06), 0 1px 2px rgba(25, 25, 24, 0.04);
+  --shadow-lg: 0 8px 24px rgba(25, 25, 24, 0.08), 0 2px 8px rgba(25, 25, 24, 0.04);
+
+  --font-sans: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-geist-mono), 'SF Mono', monospace;
+}
+
+@theme inline {
+  --color-bg-primary: var(--bg-primary);
+  --color-bg-secondary: var(--bg-secondary);
+  --color-bg-dark: var(--bg-dark);
+  --color-bg-card: var(--bg-card);
+  --color-bg-card-hover: var(--bg-card-hover);
+
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+  --color-text-inverse: var(--text-inverse);
+
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-light: var(--accent-light);
+
+  --color-border: var(--border);
+  --color-border-hover: var(--border-hover);
+
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-error: var(--error);
+  --color-info: var(--info);
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-full: 9999px;
+
+  --shadow-sm: 0 1px 2px rgba(25, 25, 24, 0.04);
+  --shadow-md: 0 2px 8px rgba(25, 25, 24, 0.06), 0 1px 2px rgba(25, 25, 24, 0.04);
+  --shadow-lg: 0 8px 24px rgba(25, 25, 24, 0.08), 0 2px 8px rgba(25, 25, 24, 0.04);
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-tertiary);
+}
+
+/* Selection */
+::selection {
+  background: var(--accent-light);
+  color: var(--text-primary);
+}
