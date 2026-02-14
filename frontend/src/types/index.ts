@@ -193,3 +193,24 @@ export interface SourceFormData {
     pause_status: string;
   };
 }
+
+// RAG Assistant types
+export interface ChatMessage {
+  role: "user" | "assistant";
+  content: string;
+  created_at?: string;
+  query_type?: string;
+  sources_used?: string[];
+}
+
+export interface ChatResponse {
+  answer: string;
+  query_type: string;
+  sources_used: string[];
+  session_id: string;
+}
+
+export interface IndexStatus {
+  shared_doc_chunks: number;
+  tenant_source_chunks: number;
+}

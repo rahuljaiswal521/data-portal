@@ -1,4 +1,5 @@
 import { API_BASE_URL } from "./constants";
+import type { ChatResponse, IndexStatus } from "@/types";
 
 class ApiError extends Error {
   constructor(public status: number, message: string) {
@@ -7,9 +8,22 @@ class ApiError extends Error {
   }
 }
 
+function getApiKey(): string {
+  if (typeof window !== "undefined") {
+    return localStorage.getItem("bp_api_key") || "";
+  }
+  return "";
+}
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
+  const apiKey = getApiKey();
+  const extraHeaders: Record<string, string> = {};
+  if (apiKey) {
+    extraHeaders["X-API-Key"] = apiKey;
+  }
+
   const res = await fetch(`${API_BASE_URL}${path}`, {
-    headers: { "Content-Type": "application/json", ...options?.headers },
+    headers: { "Content-Type": "application/json", ...extraHeaders, ...options?.headers },
     ...options,
   });
 
@@ -56,6 +70,18 @@ export const api = {
   // Other
   getEnvironments: () => request<any>("/environments"),
   getHealth: () => request<any>("/health"),
+
+  // RAG Assistant
+  chat: (data: { question: string; session_id?: string }) =>
+    request<ChatResponse>("/rag/chat", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  getChatHistory: (sessionId: string) =>
+    request<any>(`/rag/chat/history?session_id=${sessionId}`),
+  rebuildIndex: () =>
+    request<any>("/rag/index/rebuild", { method: "POST" }),
+  getIndexStatus: () => request<IndexStatus>("/rag/index/status"),
 };
 
 export { ApiError };

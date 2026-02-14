@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 const titles: Record<string, string> = {
   "/bronze": "Dashboard",
   "/bronze/new": "Add New Source",
+  "/bronze/assistant": "Data Platform Assistant",
 };
 
 export function Header() {

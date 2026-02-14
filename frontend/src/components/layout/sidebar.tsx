@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import {
   Database,
   LayoutDashboard,
+  MessageSquare,
   Plus,
   Settings,
   Layers,
@@ -11,7 +12,7 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const navItems = [
+const bronzeItems = [
   {
     label: "Dashboard",
     href: "/bronze",
@@ -21,6 +22,14 @@ const navItems = [
     label: "Add Source",
     href: "/bronze/new",
     icon: Plus,
+  },
+];
+
+const platformItems = [
+  {
+    label: "AI Assistant",
+    href: "/bronze/assistant",
+    icon: MessageSquare,
   },
 ];
 
@@ -49,7 +58,7 @@ export function Sidebar() {
         <p className="px-3 mb-2 text-[11px] font-medium uppercase tracking-wider text-text-tertiary">
           Bronze Layer
         </p>
-        {navItems.map((item) => {
+        {bronzeItems.map((item) => {
           const isActive =
             item.href === "/bronze"
               ? pathname === "/bronze"
@@ -81,6 +90,36 @@ export function Sidebar() {
             <Database size={16} />
             Silver Layer
           </div>
+          <div className="flex items-center gap-2.5 px-3 py-2 text-sm text-text-tertiary cursor-not-allowed">
+            <Database size={16} />
+            Gold Layer
+          </div>
+        </div>
+
+        <div className="pt-6">
+          <p className="px-3 mb-2 text-[11px] font-medium uppercase tracking-wider text-text-tertiary">
+            Platform
+          </p>
+          {platformItems.map((item) => {
+            const isActive = pathname.startsWith(item.href);
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "flex items-center gap-2.5 px-3 py-2 rounded-[var(--radius-md)] text-sm font-medium",
+                  "transition-colors duration-150",
+                  isActive
+                    ? "bg-accent-light text-accent"
+                    : "text-text-secondary hover:text-text-primary hover:bg-bg-secondary"
+                )}
+              >
+                <item.icon size={16} />
+                {item.label}
+              </Link>
+            );
+          })}
         </div>
       </nav>
 

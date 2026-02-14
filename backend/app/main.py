@@ -1,6 +1,7 @@
 """FastAPI application entry point."""
 
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -11,8 +12,10 @@ from app.config import settings
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: ensure sources directory exists
+    # Startup: ensure directories exist
     settings.sources_dir.mkdir(parents=True, exist_ok=True)
+    Path(settings.chromadb_persist_dir).mkdir(parents=True, exist_ok=True)
+    Path(settings.tenant_db_path).parent.mkdir(parents=True, exist_ok=True)
     yield
     # Shutdown: nothing to clean up
 

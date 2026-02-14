@@ -30,7 +30,21 @@ class Settings(BaseSettings):
     # Environments
     default_environment: str = "dev"
 
-    model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
+    # RAG
+    anthropic_api_key: Optional[str] = None
+    chromadb_persist_dir: str = str(Path(__file__).resolve().parents[1] / "data" / "chromadb")
+    rag_model: str = "claude-sonnet-4-5-20250929"
+    rag_max_tokens: int = 1024
+    rag_temperature: float = 0.3
+    rag_require_auth: bool = False
+
+    # Tenant
+    tenant_db_path: str = str(Path(__file__).resolve().parents[1] / "data" / "tenants.db")
+
+    model_config = {
+        "env_file": str(Path(__file__).resolve().parents[1] / ".env"),
+        "env_file_encoding": "utf-8",
+    }
 
     @property
     def sources_dir(self) -> Path:
