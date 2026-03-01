@@ -75,8 +75,12 @@ class ConfigService:
         if not yaml_path.exists():
             return None
 
-        data = self._read_yaml(yaml_path)
-        raw_yaml = yaml_path.read_text(encoding="utf-8")
+        try:
+            data = self._read_yaml(yaml_path)
+            raw_yaml = yaml_path.read_text(encoding="utf-8")
+        except OSError:
+            # File was deleted concurrently between exists() check and read
+            return None
 
         return SourceDetail(
             name=data.get("name", name),
@@ -103,7 +107,18 @@ class ConfigService:
 
     def update_source(self, name: str, req: SourceUpdateRequest) -> str:
         yaml_path = self._source_path(name)
-        data = self._read_yaml(yaml_path)
+        if not yaml_path.exists():
+            raise FileNotFoundError(f"Source '{name}' not found")
+        try:
+            data = self._read_yaml(yaml_path)
+        except OSError:
+            raise FileNotFoundError(f"Source '{name}' not found")
+        except yaml.YAMLError as e:
+            raise ValueError(f"Source config is temporarily unavailable: {e}")
+
+        # Guard against concurrent write leaving an empty/partial file
+        if not data or "name" not in data:
+            raise FileNotFoundError(f"Source '{name}' not found")
 
         if req.description is not None:
             data["description"] = req.description
@@ -137,8 +152,12 @@ class ConfigService:
     def delete_source(self, name: str) -> bool:
         yaml_path = self._source_path(name)
         if yaml_path.exists():
-            yaml_path.unlink()
-            return True
+            try:
+                yaml_path.unlink()
+                return True
+            except OSError:
+                # File was deleted by a concurrent request — treat as not found
+                return False
         return False
 
     def render_yaml(self, req: SourceCreateRequest) -> str:
@@ -199,7 +218,11 @@ class ConfigService:
     def _source_path(self, name: str) -> Path:
         # Try finding existing file with any prefix pattern
         for yaml_file in self.sources_dir.glob("*.yaml"):
-            data = self._read_yaml(yaml_file)
+            try:
+                data = self._read_yaml(yaml_file)
+            except OSError:
+                # File disappeared between glob() and read (concurrent delete)
+                continue
             if data.get("name") == name:
                 return yaml_file
         # Default: use source_type prefix from name pattern or just name

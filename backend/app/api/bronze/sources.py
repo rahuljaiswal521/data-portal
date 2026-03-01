@@ -53,6 +53,8 @@ def create_source(
         return deploy_svc.create_source(req)
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
+    except OSError as e:
+        raise HTTPException(status_code=409, detail=f"Source '{req.name}' could not be created: {e}")
 
 
 @router.put("/sources/{name}", response_model=SourceCreateResponse)
@@ -68,6 +70,9 @@ def update_source(
         return deploy_svc.update_source(name, req)
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
+    except (FileNotFoundError, OSError) as e:
+        # TOCTOU: source was deleted between exists() check and update
+        raise HTTPException(status_code=404, detail=f"Source '{name}' not found")
 
 
 @router.delete("/sources/{name}", response_model=SourceDeleteResponse)
@@ -77,7 +82,7 @@ def delete_source(
 ):
     try:
         return deploy_svc.delete_source(name)
-    except FileNotFoundError as e:
+    except (FileNotFoundError, OSError) as e:
         raise HTTPException(status_code=404, detail=str(e))
 
 
