@@ -6,9 +6,19 @@ from fastapi import APIRouter
 from app.api.bronze.deploy import router as deploy_router
 from app.api.bronze.monitoring import router as monitoring_router
 from app.api.bronze.sources import router as sources_router
+from app.api.gold.ingest import router as gold_ingest_router
+from app.api.gold.marts import router as gold_marts_router
+from app.api.gold.readiness import router as gold_readiness_router
+from app.api.common.account import router as account_router
+from app.api.common.auth_routes import router as auth_router
 from app.api.common.health import router as health_router
 from app.api.rag.chat import router as rag_chat_router
 from app.api.rag.index import router as rag_index_router
+from app.api.silver.deploy import router as silver_deploy_router
+from app.api.silver.modeling import router as silver_modeling_router
+from app.api.silver.monitoring import router as silver_monitoring_router
+from app.api.silver.sources import router as silver_sources_router
+from app.api.testing.suites import router as testing_suites_router
 from app.config import settings
 from app.models.responses import EnvironmentInfo
 
@@ -16,15 +26,31 @@ api_router = APIRouter(prefix="/api/v1")
 
 # Common
 api_router.include_router(health_router, tags=["health"])
+api_router.include_router(auth_router, tags=["auth"])
+api_router.include_router(account_router, tags=["account"])
 
 # Bronze
 api_router.include_router(sources_router, prefix="/bronze", tags=["bronze-sources"])
 api_router.include_router(deploy_router, prefix="/bronze", tags=["bronze-deploy"])
 api_router.include_router(monitoring_router, prefix="/bronze", tags=["bronze-monitoring"])
 
+# Silver
+api_router.include_router(silver_sources_router, prefix="/silver", tags=["silver-sources"])
+api_router.include_router(silver_deploy_router, prefix="/silver", tags=["silver-deploy"])
+api_router.include_router(silver_monitoring_router, prefix="/silver", tags=["silver-monitoring"])
+api_router.include_router(silver_modeling_router, prefix="/silver", tags=["silver-modeling"])
+
+# Gold
+api_router.include_router(gold_marts_router, prefix="/gold", tags=["gold-marts"])
+api_router.include_router(gold_ingest_router, prefix="/gold", tags=["gold-ingest"])
+api_router.include_router(gold_readiness_router, prefix="/gold", tags=["gold-readiness"])
+
 # RAG Assistant
 api_router.include_router(rag_chat_router, prefix="/rag", tags=["rag-assistant"])
 api_router.include_router(rag_index_router, prefix="/rag", tags=["rag-index"])
+
+# Testing
+api_router.include_router(testing_suites_router, prefix="/testing/suites", tags=["testing"])
 
 
 @api_router.get("/environments", response_model=list[EnvironmentInfo], tags=["environments"])

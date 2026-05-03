@@ -66,6 +66,7 @@ from app.dependencies import (
     get_silver_deploy_service,
     get_silver_modeling_service,
     get_tenant_service,
+    get_testing_service,
 )
 from app.main import app
 from app.services.audit_service import AuditService
@@ -79,6 +80,7 @@ from app.services.silver_config_service import SilverConfigService
 from app.services.silver_deploy_service import SilverDeployService
 from app.services.silver_modeling_service import SilverModelingService
 from app.services.tenant_service import TenantService
+from app.services.testing_service import TestingService
 
 
 # ── Settings isolation ─────────────────────────────────────────────────
@@ -151,6 +153,22 @@ def mock_embedding():
         "shared_doc_chunks": 10,
         "tenant_source_chunks": 3,
     }
+    return mock
+
+
+@pytest.fixture
+def mock_testing():
+    mock = MagicMock(spec=TestingService)
+    mock.list_suites.return_value = MagicMock(suites=[], total=0)
+    mock.get_suite.return_value = None
+    mock.generate_suite.return_value = MagicMock(
+        source_name="test", message="Suite scaffold generated", test_count=8
+    )
+    mock.run_suite.return_value = MagicMock(
+        run_id="test-run-id", source_name="test", message="Suite execution started"
+    )
+    mock.get_results.return_value = MagicMock(source_name="test", runs=[], total=0)
+    mock.get_latest_result.return_value = None
     return mock
 
 
@@ -228,6 +246,7 @@ def client(
     mock_embedding,
     mock_tenant,
     mock_modeling,
+    mock_testing,
     silver_config_svc,
     silver_deploy_svc,
 ):
@@ -244,6 +263,7 @@ def client(
         get_silver_config_service: lambda: silver_config_svc,
         get_silver_deploy_service: lambda: silver_deploy_svc,
         get_silver_modeling_service: lambda: mock_modeling,
+        get_testing_service: lambda: mock_testing,
     }
     with TestClient(app) as c:
         yield c

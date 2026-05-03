@@ -2,11 +2,12 @@
 
 :root {
   /* Anthropic-inspired palette */
-  --bg-primary: #faf9f5;
-  --bg-secondary: #f0efe8;
+  --bg-primary: #faf9f7;
+  --bg-secondary: #f3f1ed;
   --bg-dark: #191918;
   --bg-card: #ffffff;
   --bg-card-hover: #f7f6f0;
+  --bg-sidebar: #e4e1da;
 
   --text-primary: #191918;
   --text-secondary: #6b6b65;
@@ -44,6 +45,7 @@
   --color-bg-dark: var(--bg-dark);
   --color-bg-card: var(--bg-card);
   --color-bg-card-hover: var(--bg-card-hover);
+  --color-bg-sidebar: var(--bg-sidebar);
 
   --color-text-primary: var(--text-primary);
   --color-text-secondary: var(--text-secondary);

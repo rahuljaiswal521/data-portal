@@ -1,0 +1,268 @@
+{
+  "run_id": "1c3a7840-f26e-4b26-847f-28fd708853d0",
+  "source_name": "file_billing_accounts",
+  "started_at": "2026-03-02T12:02:17.424129Z",
+  "completed_at": "2026-03-03T11:40:12.498475Z",
+  "duration_seconds": 85075.074346,
+  "overall_status": "FAILED",
+  "environment": "dev",
+  "tester": "portal-test-framework",
+  "summary": {
+    "total": 8,
+    "passed": 0,
+    "failed": 8,
+    "skipped": 0
+  },
+  "test_cases": [
+    {
+      "id": "TC001",
+      "name": "Full load — insert all baseline records",
+      "category": "insert",
+      "positive": true,
+      "status": "FAILED",
+      "duration_seconds": 610.1,
+      "assertions": [
+        {
+          "type": "row_count",
+          "description": "5 records inserted",
+          "expected": 5,
+          "actual": 0,
+          "passed": false,
+          "sql": "SELECT COUNT(*) FROM dev.bronze_test.billing_accounts",
+          "error": null
+        },
+        {
+          "type": "row_count",
+          "description": "All 5 records are current",
+          "expected": 5,
+          "actual": 0,
+          "passed": false,
+          "sql": "SELECT COUNT(*) FROM dev.bronze_test.billing_accounts WHERE _is_current = true",
+          "error": null
+        },
+        {
+          "type": "row_count",
+          "description": "No quarantined records",
+          "expected": 0,
+          "actual": 0,
+          "passed": true,
+          "sql": "SELECT COUNT(*) FROM dev.bronze_meta.dead_letter_billing_accounts",
+          "error": null
+        }
+      ],
+      "error": null
+    },
+    {
+      "id": "TC002",
+      "name": "CDC update — SCD2 new row created, old row closed",
+      "category": "update",
+      "positive": true,
+      "status": "FAILED",
+      "duration_seconds": 605.6,
+      "assertions": [
+        {
+          "type": "row_count",
+          "description": "2 rows for A001 (original + updated)",
+          "expected": 2,
+          "actual": 0,
+          "passed": false,
+          "sql": "SELECT COUNT(*) FROM dev.bronze_test.billing_accounts WHERE account_id = 'A001'",
+          "error": null
+        },
+        {
+          "type": "row_count",
+          "description": "Old A001 row closed",
+          "expected": 1,
+          "actual": 0,
+          "passed": false,
+          "sql": "SELECT COUNT(*) FROM dev.bronze_test.billing_accounts WHERE account_id = 'A001' AND _is_current = false",
+          "error": null
+        },
+        {
+          "type": "row_count",
+          "description": "New A001 row with credit_limit=6000 is current",
+          "expected": 1,
+          "actual": 0,
+          "passed": false,
+          "sql": "SELECT COUNT(*) FROM dev.bronze_test.billing_accounts WHERE account_id = 'A001' AND _is_current = true AND credit_limit = 6000.0",
+          "error": null
+        }
+      ],
+      "error": null
+    },
+    {
+      "id": "TC003",
+      "name": "Soft-delete — row closed in bronze",
+      "category": "delete",
+      "positive": true,
+      "status": "FAILED",
+      "duration_seconds": 58129.8,
+      "assertions": [
+        {
+          "type": "row_count",
+          "description": "A003 row closed after delete",
+          "expected": 1,
+          "actual": 0,
+          "passed": false,
+          "sql": "SELECT COUNT(*) FROM dev.bronze_test.billing_accounts WHERE account_id = 'A003' AND _is_current = false",
+          "error": null
+        },
+        {
+          "type": "row_count",
+          "description": "4 active records remain (A001-updated, A002, A004, A005)",
+          "expected": 4,
+          "actual": 0,
+          "passed": false,
+          "sql": "SELECT COUNT(*) FROM dev.bronze_test.billing_accounts WHERE _is_current = true",
+          "error": null
+        }
+      ],
+      "error": null
+    },
+    {
+      "id": "TC004",
+      "name": "Late-arriving data — does not overwrite current version",
+      "category": "late_arriving",
+      "positive": true,
+      "status": "FAILED",
+      "duration_seconds": 1214.4,
+      "assertions": [
+        {
+          "type": "row_count",
+          "description": "Only 1 row for A006 — late-arriving did not create new SCD2 entry",
+          "expected": 1,
+          "actual": 0,
+          "passed": false,
+          "sql": "SELECT COUNT(*) FROM dev.bronze_test.billing_accounts WHERE account_id = 'A006'",
+          "error": null
+        },
+        {
+          "type": "row_count",
+          "description": "A006 current row unchanged",
+          "expected": 1,
+          "actual": 0,
+          "passed": false,
+          "sql": "SELECT COUNT(*) FROM dev.bronze_test.billing_accounts WHERE account_id = 'A006' AND _is_current = true",
+          "error": null
+        }
+      ],
+      "error": null
+    },
+    {
+      "id": "TC005",
+      "name": "Null primary key — quarantined to dead letter",
+      "category": "null_pk",
+      "positive": false,
+      "status": "FAILED",
+      "duration_seconds": 606.0,
+      "assertions": [
+        {
+          "type": "row_count",
+          "description": "No null PK record in main table",
+          "expected": 0,
+          "actual": 0,
+          "passed": true,
+          "sql": "SELECT COUNT(*) FROM dev.bronze_test.billing_accounts WHERE account_id IS NULL",
+          "error": null
+        },
+        {
+          "type": "row_count",
+          "description": "Null PK record quarantined to dead letter",
+          "expected": 1,
+          "actual": 0,
+          "passed": false,
+          "sql": "SELECT COUNT(*) FROM dev.bronze_meta.dead_letter_billing_accounts",
+          "error": null
+        }
+      ],
+      "error": null
+    },
+    {
+      "id": "TC006",
+      "name": "Duplicate in batch — exactly one row in target",
+      "category": "duplicate",
+      "positive": false,
+      "status": "FAILED",
+      "duration_seconds": 3834.0,
+      "assertions": [
+        {
+          "type": "row_count",
+          "description": "Only 1 row despite duplicate in batch",
+          "expected": 1,
+          "actual": 0,
+          "passed": false,
+          "sql": "SELECT COUNT(*) FROM dev.bronze_test.billing_accounts",
+          "error": null
+        },
+        {
+          "type": "row_count",
+          "description": "Exactly 1 row for A001",
+          "expected": 1,
+          "actual": 0,
+          "passed": false,
+          "sql": "SELECT COUNT(*) FROM dev.bronze_test.billing_accounts WHERE account_id = 'A001'",
+          "error": null
+        }
+      ],
+      "error": null
+    },
+    {
+      "id": "TC007",
+      "name": "Idempotency — re-run produces no duplicates",
+      "category": "idempotency",
+      "positive": true,
+      "status": "FAILED",
+      "duration_seconds": 4127.0,
+      "assertions": [
+        {
+          "type": "row_count",
+          "description": "Same row count after re-run (idempotent)",
+          "expected": 1,
+          "actual": 0,
+          "passed": false,
+          "sql": "SELECT COUNT(*) FROM dev.bronze_test.billing_accounts",
+          "error": null
+        },
+        {
+          "type": "row_count",
+          "description": "Still exactly 1 current row",
+          "expected": 1,
+          "actual": 0,
+          "passed": false,
+          "sql": "SELECT COUNT(*) FROM dev.bronze_test.billing_accounts WHERE _is_current = true",
+          "error": null
+        }
+      ],
+      "error": null
+    },
+    {
+      "id": "TC008",
+      "name": "Audit log — SUCCESS entry with correct record count",
+      "category": "audit",
+      "positive": true,
+      "status": "FAILED",
+      "duration_seconds": 15944.2,
+      "assertions": [
+        {
+          "type": "row_count_gte",
+          "description": "Audit log records a SUCCESS entry",
+          "expected": 1,
+          "actual": 0,
+          "passed": false,
+          "sql": "SELECT COUNT(*) FROM dev.bronze_meta.ingestion_audit_log WHERE source_name = 'file_billing_accounts_test' AND status = 'SUCCESS'",
+          "error": null
+        },
+        {
+          "type": "row_count_gte",
+          "description": "Audit log shows at least 5 records written",
+          "expected": 1,
+          "actual": 0,
+          "passed": false,
+          "sql": "SELECT COUNT(*) FROM dev.bronze_meta.ingestion_audit_log WHERE source_name = 'file_billing_accounts_test' AND status = 'SUCCESS' AND records_written >= 5",
+          "error": null
+        }
+      ],
+      "error": null
+    }
+  ]
+}

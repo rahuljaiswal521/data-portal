@@ -1,0 +1,5 @@
+{"customer_id": "C001", "first_name": "Alice", "last_name": "Smith", "email": "alice.smith@example.com", "phone": "0411-111-111", "date_of_birth": "1985-03-15", "status": "active", "updated_at": "2024-01-10T09:00:00Z"}
+{"customer_id": "C002", "first_name": "Bob", "last_name": "Jones", "email": "bob.jones@example.com", "phone": "0422-222-222", "date_of_birth": "1990-07-22", "status": "active", "updated_at": "2024-01-11T10:30:00Z"}
+{"customer_id": "C003", "first_name": "Carol", "last_name": "Lee", "email": "carol.lee@example.com", "phone": "0433-333-333", "date_of_birth": "1978-11-05", "status": "inactive", "updated_at": "2024-01-12T14:00:00Z"}
+{"customer_id": "C004", "first_name": "David", "last_name": "Brown", "email": "david.brown@example.com", "phone": "0444-444-444", "date_of_birth": "1995-02-28", "status": "active", "updated_at": "2024-01-13T08:15:00Z"}
+{"customer_id": "C005", "first_name": "Eve", "last_name": "Wilson", "email": "eve.wilson@example.com", "phone": "0455-555-555", "date_of_birth": "1982-09-17", "status": "active", "updated_at": "2024-01-14T16:45:00Z"}

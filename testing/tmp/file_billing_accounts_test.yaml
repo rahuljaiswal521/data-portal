@@ -1,0 +1,42 @@
+description: file_billing_accounts
+enabled: true
+extract:
+  format: json
+  format_options:
+    inferSchema: 'true'
+    multiLine: 'false'
+  load_type: full
+  path: /Volumes/dev/bronze/landing_data/file_billing_accounts_test/
+name: file_billing_accounts_test
+source_type: file
+target:
+  catalog: ${catalog}
+  cdc:
+    enabled: true
+    exclude_columns_from_hash:
+    - _ingest_timestamp
+    - _ingest_date
+    - _source_file
+    mode: scd2
+    primary_keys:
+    - account_id
+  metadata_columns:
+  - expression: current_timestamp()
+    name: _ingest_timestamp
+  - expression: current_date()
+    name: _ingest_date
+  - expression: ''''''
+    name: _source_system
+  - expression: _metadata.file_path
+    name: _source_file
+  partition_by:
+  - _ingest_date
+  quality:
+    enabled: true
+    quarantine_threshold_pct: 100
+  schema: bronze_test
+  schema_evolution:
+    mode: merge
+  table: billing_accounts
+  table_properties:
+    delta.autoOptimize.optimizeWrite: 'true'

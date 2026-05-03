@@ -18,6 +18,8 @@ def redeploy_source(
         return deploy_svc.redeploy(name)
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
+    except RuntimeError as e:
+        raise HTTPException(status_code=502, detail=str(e))
 
 
 @router.post("/sources/{name}/trigger")

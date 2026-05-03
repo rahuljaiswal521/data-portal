@@ -1,0 +1,104 @@
+{
+  "run_id": "e7747f53-5d6e-40e9-aafa-57d73570ff60",
+  "source_name": "file_billing_accounts",
+  "started_at": "2026-03-07T07:05:17.126530Z",
+  "completed_at": "2026-03-07T07:37:29.727041Z",
+  "duration_seconds": 1932.600511,
+  "overall_status": "CANCELLED",
+  "environment": "dev",
+  "tester": "portal-test-framework",
+  "summary": {
+    "total": 8,
+    "passed": 0,
+    "failed": 0,
+    "skipped": 0
+  },
+  "test_cases": [
+    {
+      "id": "TC001",
+      "name": "Full load — insert all baseline records",
+      "category": "insert",
+      "positive": true,
+      "status": "FAILED",
+      "duration_seconds": 610.7,
+      "assertions": [
+        {
+          "type": "row_count",
+          "description": "5 records inserted",
+          "expected": 5,
+          "actual": 5,
+          "passed": true,
+          "sql": "SELECT COUNT(*) FROM dev.bronze_test.billing_accounts",
+          "error": null
+        },
+        {
+          "type": "row_count",
+          "description": "All 5 records are current",
+          "expected": 5,
+          "actual": 5,
+          "passed": true,
+          "sql": "SELECT COUNT(*) FROM dev.bronze_test.billing_accounts WHERE _is_current = true",
+          "error": null
+        },
+        {
+          "type": "row_count",
+          "description": "No quarantined records",
+          "expected": 0,
+          "actual": 0,
+          "passed": true,
+          "sql": "SELECT COUNT(*) FROM dev.bronze_meta.dead_letter_billing_accounts",
+          "error": null
+        }
+      ],
+      "error": null
+    },
+    {
+      "id": "TC002",
+      "name": "CDC update — SCD2 new row created, old row closed",
+      "category": "update",
+      "positive": true,
+      "status": "FAILED",
+      "duration_seconds": 609.6,
+      "assertions": [
+        {
+          "type": "row_count",
+          "description": "2 rows for A001 (original + updated)",
+          "expected": 2,
+          "actual": 2,
+          "passed": true,
+          "sql": "SELECT COUNT(*) FROM dev.bronze_test.billing_accounts WHERE account_id = 'A001'",
+          "error": null
+        },
+        {
+          "type": "row_count",
+          "description": "Old A001 row closed",
+          "expected": 1,
+          "actual": 1,
+          "passed": true,
+          "sql": "SELECT COUNT(*) FROM dev.bronze_test.billing_accounts WHERE account_id = 'A001' AND _is_current = false",
+          "error": null
+        },
+        {
+          "type": "row_count",
+          "description": "New A001 row with credit_limit=6000 is current",
+          "expected": 1,
+          "actual": 1,
+          "passed": true,
+          "sql": "SELECT COUNT(*) FROM dev.bronze_test.billing_accounts WHERE account_id = 'A001' AND _is_current = true AND credit_limit = 6000.0",
+          "error": null
+        }
+      ],
+      "error": null
+    },
+    {
+      "id": "TC003",
+      "name": "Soft-delete — row closed in bronze",
+      "category": "delete",
+      "positive": true,
+      "status": "RUNNING",
+      "duration_seconds": null,
+      "assertions": [],
+      "error": null
+    }
+  ]
+}

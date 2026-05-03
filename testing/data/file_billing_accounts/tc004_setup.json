@@ -1,0 +1,1 @@
+{"account_id": "A006", "account_holder_id": "C006", "billing_email": "frank.taylor@example.com", "billing_address": "60 Taylor Tce", "billing_city": "Hobart", "billing_state": "TAS", "billing_postcode": "7000", "account_type": "standard", "credit_limit": 2500.00, "payment_method": "direct_debit", "updated_at": "2026-03-01T12:00:00Z"}

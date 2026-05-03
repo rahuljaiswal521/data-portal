@@ -23,7 +23,12 @@ async def get_current_tenant(
         tenant_id = tenant_svc.validate_api_key(api_key)
         if tenant_id:
             return tenant_id
-        raise HTTPException(status_code=401, detail="Invalid API key")
+        # Key provided but not recognised — only hard-reject when auth is required.
+        # In local-dev mode (rag_require_auth=False) the portal UI password is used
+        # as bp_api_key but is not a real tenant key, so fall through to default tenant.
+        if settings.rag_require_auth:
+            raise HTTPException(status_code=401, detail="Invalid API key")
+        return tenant_svc.ensure_default_tenant()
 
     # No key provided
     if not settings.rag_require_auth:

@@ -1,0 +1,2 @@
+{"policy_id": "POL001", "customer_id": "C001", "policy_type": "home", "status": "active", "start_date": "2023-01-01", "end_date": "2024-12-31", "premium_amount": 1200.00, "coverage_amount": 500000.00, "excess": 500.00, "updated_at": "2024-01-01T00:00:00Z"}
+{"policy_id": "POL001", "customer_id": "C001", "policy_type": "home", "status": "active", "start_date": "2023-01-01", "end_date": "2024-12-31", "premium_amount": 1200.00, "coverage_amount": 500000.00, "excess": 500.00, "updated_at": "2024-01-01T00:00:00Z"}

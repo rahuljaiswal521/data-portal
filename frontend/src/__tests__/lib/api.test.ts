@@ -137,6 +137,30 @@ describe("API key header injection", () => {
   });
 });
 
+describe("api.runSingleTc()", () => {
+  it("calls POST /testing/suites/{sourceName}/run-tc/{tcId}", async () => {
+    const result = { id: "TC001", status: "PASSED", assertions: [], duration_seconds: 0.5 };
+    global.fetch = mockFetch(result);
+    await api.runSingleTc("my_source", "TC001");
+    expect(global.fetch).toHaveBeenCalledWith(
+      `${BASE}/testing/suites/my_source/run-tc/TC001`,
+      expect.objectContaining({ method: "POST" })
+    );
+  });
+
+  it("returns the TestCaseResult from the response", async () => {
+    const result = { id: "TC002", status: "FAILED", assertions: [{ description: "row count", expected: 5, actual: 3, passed: false }], duration_seconds: 1.2 };
+    global.fetch = mockFetch(result);
+    const res = await api.runSingleTc("src", "TC002");
+    expect(res).toEqual(result);
+  });
+
+  it("throws ApiError on non-200 response", async () => {
+    global.fetch = mockFetch({ detail: "TC not found" }, 404);
+    await expect(api.runSingleTc("src", "BAD")).rejects.toBeInstanceOf(ApiError);
+  });
+});
+
 describe("api.suggestEnterpriseModelStream()", () => {
   it("parses SSE chunks and returns final JSON", async () => {
     const finalObj = { domains: [], ungrouped_tables: [], overall_reasoning: "done" };

@@ -16,9 +16,10 @@ interface FormWizardProps {
   steps: Step[];
   onSubmit: () => void;
   submitting?: boolean;
+  submitLabel?: string;
 }
 
-export function FormWizard({ steps, onSubmit, submitting }: FormWizardProps) {
+export function FormWizard({ steps, onSubmit, submitting, submitLabel = "Create Source" }: FormWizardProps) {
   const [currentStep, setCurrentStep] = useState(0);
 
   const isLast = currentStep === steps.length - 1;
@@ -93,7 +94,7 @@ export function FormWizard({ steps, onSubmit, submitting }: FormWizardProps) {
             </Button>
             {isLast ? (
               <Button onClick={onSubmit} disabled={submitting}>
-                {submitting ? "Creating..." : "Create Source"}
+                {submitting ? "Creating..." : submitLabel}
               </Button>
             ) : (
               <Button onClick={() => setCurrentStep((s) => s + 1)}>

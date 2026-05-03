@@ -1,0 +1,47 @@
+{
+  "run_id": "9556d85c-2687-483e-abbc-447c06c97f38",
+  "source_name": "file_crm_customers",
+  "started_at": "2026-03-10T22:27:06.435107Z",
+  "completed_at": "2026-03-10T22:27:06.435107Z",
+  "duration_seconds": 34181.0,
+  "overall_status": "PASSED",
+  "environment": "dev",
+  "tester": "portal-test-framework",
+  "summary": {
+    "total": 1,
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0
+  },
+  "test_cases": [
+    {
+      "id": "TC005",
+      "name": "Null primary key — quarantined to dead letter",
+      "category": "null_pk",
+      "positive": false,
+      "status": "PASSED",
+      "duration_seconds": 34181.0,
+      "assertions": [
+        {
+          "type": "row_count",
+          "description": "No null PK record in main table",
+          "expected": 0,
+          "actual": 0,
+          "passed": true,
+          "sql": "SELECT COUNT(*) FROM dev.bronze_test.crm_customers WHERE customer_id IS NULL",
+          "error": null
+        },
+        {
+          "type": "row_count",
+          "description": "Null PK record quarantined to dead letter",
+          "expected": 1,
+          "actual": 1,
+          "passed": true,
+          "sql": "SELECT COUNT(*) FROM dev.bronze_meta.dead_letter_crm_customers",
+          "error": null
+        }
+      ],
+      "error": null
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+/* Ecran logo — show full logo on a white badge in the orange header */
+.md-header__button.md-logo {
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 4px 12px;
+  margin: 6px 0;
+}
+
+.md-header__button.md-logo img {
+  display: block;
+  height: 44px;
+  width: auto;
+}

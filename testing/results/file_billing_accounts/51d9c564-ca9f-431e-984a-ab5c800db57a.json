@@ -1,0 +1,28 @@
+{
+  "run_id": "51d9c564-ca9f-431e-984a-ab5c800db57a",
+  "source_name": "file_billing_accounts",
+  "started_at": "2026-03-08T09:27:48.902325Z",
+  "completed_at": null,
+  "duration_seconds": null,
+  "overall_status": "RUNNING",
+  "environment": "dev",
+  "tester": "portal-test-framework",
+  "summary": {
+    "total": 8,
+    "passed": 0,
+    "failed": 0,
+    "skipped": 0
+  },
+  "test_cases": [
+    {
+      "id": "TC001",
+      "name": "Full load — insert all baseline records",
+      "category": "insert",
+      "positive": true,
+      "status": "RUNNING",
+      "duration_seconds": null,
+      "assertions": [],
+      "error": null
+    }
+  ]
+}

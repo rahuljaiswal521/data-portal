@@ -2,13 +2,17 @@
 
 import { cn } from "@/lib/utils";
 import {
-  Database,
+  FileSpreadsheet,
+  FlaskConical,
+  GitBranch,
   LayoutDashboard,
   MessageSquare,
   Plus,
   Settings,
-  Layers,
+  Sparkles,
+  Workflow,
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -25,7 +29,56 @@ const bronzeItems = [
   },
 ];
 
+const silverItems = [
+  {
+    label: "Dashboard",
+    href: "/silver",
+    icon: LayoutDashboard,
+  },
+  {
+    label: "Model Advisor",
+    href: "/silver/model-advisor",
+    icon: Sparkles,
+  },
+  {
+    label: "New Entity",
+    href: "/silver/new",
+    icon: Plus,
+  },
+  {
+    label: "Model Diagram",
+    href: "/silver/diagram",
+    icon: GitBranch,
+  },
+];
+
+const goldItems = [
+  {
+    label: "Dashboard",
+    href: "/gold",
+    icon: LayoutDashboard,
+  },
+  {
+    label: "Import Workbook",
+    href: "/gold/import",
+    icon: FileSpreadsheet,
+  },
+];
+
+const testingItems = [
+  {
+    label: "Bronze Tests",
+    href: "/testing/bronze",
+    icon: FlaskConical,
+  },
+];
+
 const platformItems = [
+  {
+    label: "Architecture",
+    href: "/architecture",
+    icon: Workflow,
+  },
   {
     label: "AI Assistant",
     href: "/bronze/assistant",
@@ -37,20 +90,17 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="fixed inset-y-0 left-0 z-30 w-[240px] border-r border-border bg-bg-card flex flex-col">
+    <aside className="fixed inset-y-0 left-0 z-30 w-[240px] border-r border-border bg-bg-sidebar flex flex-col">
       {/* Logo */}
-      <div className="flex items-center gap-2.5 px-5 h-16 border-b border-border">
-        <div className="flex items-center justify-center w-8 h-8 rounded-[var(--radius-md)] bg-bg-dark">
-          <Layers size={16} className="text-text-inverse" />
-        </div>
-        <div>
-          <h1 className="text-[15px] font-semibold text-text-primary leading-tight">
-            Data Portal
-          </h1>
-          <p className="text-[11px] text-text-tertiary leading-tight">
-            Lakehouse Platform
-          </p>
-        </div>
+      <div className="flex items-center justify-center px-4 h-16 border-b border-border">
+        <Image
+          src="/ecran-logo.png"
+          alt="Ecran"
+          width={150}
+          height={48}
+          className="object-contain"
+          priority
+        />
       </div>
 
       {/* Navigation */}
@@ -84,15 +134,92 @@ export function Sidebar() {
 
         <div className="pt-6">
           <p className="px-3 mb-2 text-[11px] font-medium uppercase tracking-wider text-text-tertiary">
-            Coming Soon
-          </p>
-          <div className="flex items-center gap-2.5 px-3 py-2 text-sm text-text-tertiary cursor-not-allowed">
-            <Database size={16} />
             Silver Layer
-          </div>
-          <div className="flex items-center gap-2.5 px-3 py-2 text-sm text-text-tertiary cursor-not-allowed">
-            <Database size={16} />
+          </p>
+          {silverItems.map((item) => {
+            const isActive =
+              item.href === "/silver"
+                ? pathname === "/silver"
+                : pathname.startsWith(item.href);
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "flex items-center gap-2.5 px-3 py-2 rounded-[var(--radius-md)] text-sm font-medium",
+                  "transition-colors duration-150",
+                  isActive
+                    ? "bg-accent-light text-accent"
+                    : "text-text-secondary hover:text-text-primary hover:bg-bg-secondary"
+                )}
+              >
+                <item.icon size={16} />
+                {item.label}
+              </Link>
+            );
+          })}
+        </div>
+
+        <div className="pt-6">
+          <p className="px-3 mb-2 text-[11px] font-medium uppercase tracking-wider text-text-tertiary">
             Gold Layer
+          </p>
+          {goldItems.map((item) => {
+            const isActive =
+              item.href === "/gold"
+                ? pathname === "/gold"
+                : pathname.startsWith(item.href);
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "flex items-center gap-2.5 px-3 py-2 rounded-[var(--radius-md)] text-sm font-medium",
+                  "transition-colors duration-150",
+                  isActive
+                    ? "bg-accent-light text-accent"
+                    : "text-text-secondary hover:text-text-primary hover:bg-bg-secondary"
+                )}
+              >
+                <item.icon size={16} />
+                {item.label}
+              </Link>
+            );
+          })}
+        </div>
+
+        <div className="pt-6">
+          <p className="px-3 mb-2 text-[11px] font-medium uppercase tracking-wider text-text-tertiary">
+            Testing
+          </p>
+          {testingItems.map((item) => {
+            const isActive = pathname.startsWith(item.href);
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "flex items-center gap-2.5 px-3 py-2 rounded-[var(--radius-md)] text-sm font-medium",
+                  "transition-colors duration-150",
+                  isActive
+                    ? "bg-accent-light text-accent"
+                    : "text-text-secondary hover:text-text-primary hover:bg-bg-secondary"
+                )}
+              >
+                <item.icon size={16} />
+                {item.label}
+              </Link>
+            );
+          })}
+          <div className="flex items-center gap-2.5 px-3 py-2 text-sm text-text-tertiary cursor-not-allowed">
+            <FlaskConical size={16} />
+            Silver Tests
+            <span className="ml-auto text-[10px] uppercase tracking-wide text-text-tertiary/60">
+              soon
+            </span>
           </div>
         </div>
 
@@ -126,7 +253,7 @@ export function Sidebar() {
       {/* Footer */}
       <div className="px-3 py-3 border-t border-border">
         <Link
-          href="#"
+          href="/settings"
           className="flex items-center gap-2.5 px-3 py-2 rounded-[var(--radius-md)] text-sm text-text-secondary hover:text-text-primary hover:bg-bg-secondary transition-colors"
         >
           <Settings size={16} />

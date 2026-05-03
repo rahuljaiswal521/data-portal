@@ -1,0 +1,74 @@
+# portal/docker-compose.yml
+# Local development / pre-production testing.
+# Run from the portal/ directory:
+#   docker compose up --build
+#
+# Volume strategy:
+#   - bronze_framework/conf and silver_framework/conf are bind-mounted from your
+#     local repo so the portal reads/writes your actual YAML files directly.
+#   - chromadb, model cache, and app data use Docker-managed named volumes so
+#     they survive container restarts without polluting the repo.
+
+services:
+
+  # ── Backend (FastAPI) ──────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ..                              # Demo/ root (needs bronze/silver framework)
+      dockerfile: portal/backend/Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      # Bind-mount local conf so YAML edits through the portal go straight to disk
+      - ../bronze_framework/conf:/data/bronze_conf
+      - ../silver_framework/conf:/data/silver_conf
+      # Bind-mount testing directory so suites/data/results are visible in container
+      - ./testing:/testing
+      # Named volumes for persistence
+      - chromadb_data:/data/chromadb
+      - model_cache:/data/model_cache
+      - app_data:/data/app
+    environment:
+      # Override CORS so the containerised frontend is allowed
+      CORS_ORIGINS: '["http://localhost:3000"]'
+      # Git is disabled in containers (uploads go via Databricks SDK instead)
+      GIT_ENABLED: "false"
+      # Override Windows paths from .env with container-correct paths
+      FRAMEWORK_ROOT: /workspace/bronze_framework
+      SILVER_FRAMEWORK_ROOT: /workspace/silver_framework
+      CONF_DIR: /data/bronze_conf
+      SILVER_CONF_DIR: /data/silver_conf
+      CHROMADB_PERSIST_DIR: /data/chromadb
+      TENANT_DB_PATH: /data/app/tenants.db
+      HF_HOME: /data/model_cache
+      TRANSFORMERS_CACHE: /data/model_cache
+    env_file:
+      # Loads DATABRICKS_HOST, DATABRICKS_TOKEN, DATABRICKS_WAREHOUSE_ID,
+      # ANTHROPIC_API_KEY from your existing .env file.
+      - backend/.env
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s   # chromadb + sentence-transformers take time to init
+
+  # ── Frontend (Next.js) ────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ..
+      dockerfile: portal/frontend/Dockerfile
+      args:
+        # Points the client bundle at the local backend
+        NEXT_PUBLIC_API_URL: http://localhost:8000/api/v1
+    ports:
+      - "3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+# ── Named volumes ─────────────────────────────────────────────────────────────
+volumes:
+  chromadb_data:
+  model_cache:
+  app_data:

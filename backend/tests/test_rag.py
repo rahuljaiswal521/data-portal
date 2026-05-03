@@ -1,5 +1,7 @@
 """Tests for RAG chat, history, index rebuild, and index status endpoints."""
 
+from unittest.mock import MagicMock
+
 BASE = "/api/v1/rag"
 
 
@@ -169,3 +171,70 @@ class TestIndexStatus:
         data = resp.json()
         assert "shared_doc_chunks" in data
         assert "tenant_source_chunks" in data
+
+
+class TestChatNoTenantKey:
+    """RAG chat behaviour when the tenant has no Anthropic API key configured."""
+
+    def test_chat_no_tenant_key_returns_disabled_message(self, client, mock_rag, mock_tenant):
+        """When no tenant key is set, answer() returns the 'not configured' message."""
+        # Configure mock_rag.answer to return the disabled response (mirrors real _client_for behaviour)
+        mock_rag.answer.return_value = {
+            "answer": "The AI assistant is not configured. "
+                      "Please set your Anthropic API key in Settings.",
+            "query_type": "error",
+            "sources_used": [],
+        }
+        resp = client.post(f"{BASE}/chat", json={"question": "What is bronze?"})
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "AI assistant is not configured" in data["answer"]
+
+    def test_chat_no_tenant_key_answer_field_present(self, client, mock_rag, mock_tenant):
+        """Response still has the standard shape even when AI is disabled."""
+        mock_rag.answer.return_value = {
+            "answer": "The AI assistant is not configured. "
+                      "Please set your Anthropic API key in Settings.",
+            "query_type": "error",
+            "sources_used": [],
+        }
+        resp = client.post(f"{BASE}/chat", json={"question": "Tell me about pipelines"})
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "answer" in data
+        assert "query_type" in data
+        assert "session_id" in data
+        assert "sources_used" in data
+
+    def test_chat_does_not_pass_api_key_to_answer(
+        self, client, mock_rag, mock_tenant
+    ):
+        """After the multi-provider refactor, the route no longer passes api_key.
+
+        The RAGService resolves the correct provider key internally via
+        ai_client_service based on the tenant's selected model.
+        """
+        mock_rag.answer.return_value = {
+            "answer": "The AI assistant is not configured. "
+                      "Please set your Anthropic API key in Settings.",
+            "query_type": "error",
+            "sources_used": [],
+        }
+        client.post(f"{BASE}/chat", json={"question": "hi"})
+        call_kwargs = mock_rag.answer.call_args
+        assert "api_key" not in call_kwargs.kwargs
+
+    def test_chat_forwards_tenant_id_to_answer(
+        self, client, mock_rag, mock_tenant
+    ):
+        """The chat endpoint forwards tenant_id to answer() (not api_key)."""
+        mock_tenant.ensure_default_tenant()
+        mock_rag.answer.return_value = {
+            "answer": "The framework uses Delta Lake for storage.",
+            "query_type": "GENERAL",
+            "sources_used": ["docs/overview.md"],
+        }
+        client.post(f"{BASE}/chat", json={"question": "What is bronze?"})
+        call_kwargs = mock_rag.answer.call_args
+        assert call_kwargs.kwargs.get("tenant_id") == "default"
+        assert "api_key" not in call_kwargs.kwargs

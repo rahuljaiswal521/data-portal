@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { Bot, User } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 import type { ChatMessage as ChatMessageType } from "@/types";
 
 interface ChatMessageProps {
@@ -31,7 +32,13 @@ export function ChatMessage({ message }: ChatMessageProps) {
             : "bg-bg-card border border-border text-text-primary"
         )}
       >
-        <p className="whitespace-pre-wrap">{message.content}</p>
+        {isUser ? (
+          <p className="whitespace-pre-wrap">{message.content}</p>
+        ) : (
+          <div className="prose prose-sm max-w-none prose-pre:bg-bg-secondary prose-pre:text-text-primary prose-pre:rounded-[var(--radius-md)] prose-pre:text-xs prose-code:text-accent prose-code:text-xs prose-p:my-1.5 prose-ul:my-1.5 prose-ol:my-1.5 prose-li:my-0.5 prose-headings:my-2 prose-headings:text-text-primary">
+            <ReactMarkdown>{message.content}</ReactMarkdown>
+          </div>
+        )}
         {!isUser && message.sources_used && message.sources_used.length > 0 && (
           <div className="mt-2 pt-2 border-t border-border">
             <p className="text-[11px] text-text-tertiary">

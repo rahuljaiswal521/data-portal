@@ -1,0 +1,165 @@
+source_name: file_policies
+source_type: file
+primary_keys:
+- policy_id
+target_table: policies
+test_catalog: dev
+test_schema: bronze_test
+test_cases:
+
+- id: TC001
+  name: "Full load \u2014 insert all baseline records"
+  category: insert
+  positive: true
+  data_file: tc001_full_load.json
+  setup:
+  - truncate_test_table
+  teardown: []
+  assertions:
+  - type: row_count
+    sql: SELECT COUNT(*) FROM dev.bronze_test.policies
+    expected: 7
+    description: 7 records inserted
+  - type: row_count
+    sql: SELECT COUNT(*) FROM dev.bronze_test.policies WHERE _is_current = true
+    expected: 7
+    description: All 7 records are current
+  - type: row_count
+    sql: SELECT COUNT(*) FROM dev.bronze_meta.dead_letter_policies
+    expected: 0
+    description: No quarantined records
+
+- id: TC002
+  name: "CDC update \u2014 SCD2 new row created, old row closed"
+  category: update
+  positive: true
+  data_file: tc002_update.json
+  setup: []
+  teardown: []
+  assertions:
+  - type: row_count
+    sql: SELECT COUNT(*) FROM dev.bronze_test.policies WHERE policy_id = 'POL001'
+    expected: 2
+    description: 2 rows for POL001 (original + updated)
+  - type: row_count
+    sql: SELECT COUNT(*) FROM dev.bronze_test.policies WHERE policy_id = 'POL001'
+      AND _is_current = false
+    expected: 1
+    description: Old POL001 row closed
+  - type: row_count
+    sql: SELECT COUNT(*) FROM dev.bronze_test.policies WHERE policy_id = 'POL001'
+      AND _is_current = true AND premium_amount = 1400.0
+    expected: 1
+    description: New POL001 row with updated premium is current
+
+- id: TC003
+  name: "Soft-delete \u2014 row closed in bronze"
+  category: delete
+  positive: true
+  data_file: tc003_delete.json
+  setup: []
+  teardown: []
+  assertions:
+  - type: row_count
+    sql: SELECT COUNT(*) FROM dev.bronze_test.policies WHERE policy_id = 'POL004'
+      AND _is_current = false
+    expected: 1
+    description: POL004 row closed after delete
+  - type: row_count
+    sql: SELECT COUNT(*) FROM dev.bronze_test.policies WHERE _is_current = true
+    expected: 6
+    description: "6 active records remain (POL001-updated, POL002, POL003, POL005, POL006, POL007)"
+
+- id: TC004
+  name: "Late-arriving data \u2014 does not overwrite current version"
+  category: late_arriving
+  positive: true
+  data_file: tc004_late_arriving.json
+  setup_data_file: tc004_setup.json
+  setup:
+  - truncate_test_table
+  teardown: []
+  assertions:
+  - type: row_count
+    sql: SELECT COUNT(*) FROM dev.bronze_test.policies WHERE policy_id = 'POL008'
+    expected: 1
+    description: "Only 1 row for POL008 \u2014 late-arriving did not create new SCD2 entry"
+  - type: row_count
+    sql: SELECT COUNT(*) FROM dev.bronze_test.policies WHERE policy_id = 'POL008'
+      AND _is_current = true
+    expected: 1
+    description: POL008 current row unchanged
+
+- id: TC005
+  name: "Null primary key \u2014 quarantined to dead letter"
+  category: null_pk
+  positive: false
+  data_file: tc005_null_pk.json
+  setup:
+  - truncate_test_table
+  teardown: []
+  assertions:
+  - type: row_count
+    sql: SELECT COUNT(*) FROM dev.bronze_test.policies WHERE policy_id IS NULL
+    expected: 0
+    description: No null PK record in main table
+  - type: row_count
+    sql: SELECT COUNT(*) FROM dev.bronze_meta.dead_letter_policies
+    expected: 1
+    description: Null PK record quarantined to dead letter
+
+- id: TC006
+  name: "Duplicate in batch \u2014 exactly one row in target"
+  category: duplicate
+  positive: false
+  data_file: tc006_duplicate.json
+  setup:
+  - truncate_test_table
+  teardown: []
+  assertions:
+  - type: row_count
+    sql: SELECT COUNT(*) FROM dev.bronze_test.policies
+    expected: 1
+    description: Only 1 row despite duplicate in batch
+  - type: row_count
+    sql: SELECT COUNT(*) FROM dev.bronze_test.policies WHERE policy_id = 'POL001'
+    expected: 1
+    description: Exactly 1 row for POL001
+
+- id: TC007
+  name: "Idempotency \u2014 re-run produces no duplicates"
+  category: idempotency
+  positive: true
+  data_file: tc006_duplicate.json
+  setup: []
+  teardown: []
+  assertions:
+  - type: row_count
+    sql: SELECT COUNT(*) FROM dev.bronze_test.policies
+    expected: 1
+    description: Same row count after re-run (idempotent)
+  - type: row_count
+    sql: SELECT COUNT(*) FROM dev.bronze_test.policies WHERE _is_current = true
+    expected: 1
+    description: Still exactly 1 current row
+
+- id: TC008
+  name: "Audit log \u2014 SUCCESS entry with correct record count"
+  category: audit
+  positive: true
+  data_file: tc001_full_load.json
+  setup:
+  - truncate_test_table
+  teardown:
+  - truncate_test_table
+  assertions:
+  - type: row_count_gte
+    sql: SELECT COUNT(*) FROM dev.bronze_meta.ingestion_audit_log WHERE source_name
+      = 'file_policies_test' AND status = 'SUCCESS'
+    expected: 1
+    description: Audit log records a SUCCESS entry
+  - type: row_count_gte
+    sql: SELECT COUNT(*) FROM dev.bronze_meta.ingestion_audit_log WHERE source_name
+      = 'file_policies_test' AND status = 'SUCCESS' AND records_written >= 7
+    expected: 1
+    description: Audit log shows at least 7 records written

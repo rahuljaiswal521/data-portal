@@ -11,21 +11,31 @@ from app.config import settings
 logger = logging.getLogger(__name__)
 
 # Embedding function loaded once, shared across calls
+# Sentinel value to avoid retrying a failed load on every request
 _embedding_fn = None
+_embedding_fn_unavailable = False
 
 
 def _get_embedding_function():
-    """Lazy-load sentence-transformers embedding function."""
-    global _embedding_fn
+    """Lazy-load sentence-transformers embedding function. Returns None if unavailable."""
+    global _embedding_fn, _embedding_fn_unavailable
+    if _embedding_fn_unavailable:
+        return None
     if _embedding_fn is None:
-        from chromadb.utils.embedding_functions import (
-            SentenceTransformerEmbeddingFunction,
-        )
-
-        _embedding_fn = SentenceTransformerEmbeddingFunction(
-            model_name="all-MiniLM-L6-v2"
-        )
-        logger.info("Loaded embedding model: all-MiniLM-L6-v2")
+        try:
+            from chromadb.utils.embedding_functions import (
+                SentenceTransformerEmbeddingFunction,
+            )
+            _embedding_fn = SentenceTransformerEmbeddingFunction(
+                model_name="all-MiniLM-L6-v2"
+            )
+            logger.info("Loaded embedding model: all-MiniLM-L6-v2")
+        except Exception as e:
+            logger.warning(
+                "Embedding model unavailable (%s). RAG will work without vector search.", e
+            )
+            _embedding_fn_unavailable = True
+            return None
     return _embedding_fn
 
 
@@ -39,16 +49,30 @@ class EmbeddingService:
 
     SHARED_COLLECTION = "shared_docs"
 
+    @property
+    def available(self) -> bool:
+        return self._client is not None
+
     def __init__(self) -> None:
         persist_dir = Path(settings.chromadb_persist_dir)
         persist_dir.mkdir(parents=True, exist_ok=True)
-        self._client = chromadb.PersistentClient(
-            path=str(persist_dir),
-            settings=ChromaSettings(anonymized_telemetry=False),
-        )
         self._ef = _get_embedding_function()
+        if self._ef is not None:
+            try:
+                self._client = chromadb.PersistentClient(
+                    path=str(persist_dir),
+                    settings=ChromaSettings(anonymized_telemetry=False),
+                )
+            except Exception as e:
+                logger.warning("ChromaDB init failed (%s). Vector search disabled.", e)
+                self._client = None
+        else:
+            self._client = None
+            logger.warning("EmbeddingService running without vector search (no embedding model).")
 
     def _get_or_create_collection(self, name: str):
+        if self._client is None:
+            raise RuntimeError("Vector search unavailable — embedding model failed to load.")
         return self._client.get_or_create_collection(
             name=name,
             embedding_function=self._ef,
@@ -162,6 +186,8 @@ class EmbeddingService:
         n_results: int = 5,
     ) -> list[dict]:
         """Query both tenant sources + shared docs, merge and rank."""
+        if self._client is None:
+            return []
         tenant_hits = self.query(
             self._tenant_collection_name(tenant_id),
             query_text,

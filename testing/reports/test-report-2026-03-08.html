@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Portal Regression Test Report — 2026-03-08</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f9f7f4;
+    --bg-card: #ffffff;
+    --border: #e5e2dc;
+    --text: #1a1714;
+    --text-sec: #6b6560;
+    --accent: #d97757;
+    --green: #16a34a;
+    --red: #dc2626;
+    --yellow: #ca8a04;
+    --blue: #2563eb;
+    --sidebar-w: 260px;
+  }
+  html { scroll-behavior: smooth; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.6; }
+  .layout { display: flex; min-height: 100vh; }
+  .sidebar { width: var(--sidebar-w); flex-shrink: 0; background: var(--bg-card); border-right: 1px solid var(--border); position: sticky; top: 0; height: 100vh; overflow-y: auto; padding: 20px 0; }
+  .main { flex: 1; padding: 32px 40px; max-width: 1100px; }
+  .sidebar-logo { padding: 0 20px 16px; border-bottom: 1px solid var(--border); margin-bottom: 12px; }
+  .sidebar-logo h2 { font-size: 13px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: .05em; }
+  .sidebar-logo p { font-size: 11px; color: var(--text-sec); margin-top: 2px; }
+  .nav-section { padding: 8px 20px 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--text-sec); }
+  .nav-link { display: flex; align-items: center; justify-content: space-between; padding: 6px 20px; font-size: 12px; color: var(--text-sec); text-decoration: none; border-left: 2px solid transparent; transition: all .15s; }
+  .nav-link:hover, .nav-link.active { color: var(--text); background: var(--bg); border-left-color: var(--accent); }
+  .pill { font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 9999px; }
+  .pill-green { background: #dcfce7; color: var(--green); }
+  .page-header { margin-bottom: 32px; padding-bottom: 20px; border-bottom: 2px solid var(--border); }
+  .page-header h1 { font-size: 26px; font-weight: 700; }
+  .meta-row { display: flex; gap: 24px; flex-wrap: wrap; margin-top: 8px; }
+  .meta-item { font-size: 12px; color: var(--text-sec); }
+  .meta-item span { color: var(--text); font-weight: 600; }
+  .badge-pass { display: inline-flex; align-items: center; gap: 6px; background: #dcfce7; color: var(--green); font-weight: 700; padding: 4px 14px; border-radius: 9999px; font-size: 13px; }
+  .section { margin-bottom: 40px; }
+  .section h2 { font-size: 18px; font-weight: 700; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  .cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+  .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 20px; }
+  .card-value { font-size: 32px; font-weight: 800; line-height: 1; }
+  .card-label { font-size: 12px; color: var(--text-sec); margin-top: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+  .green { color: var(--green); }
+  .red { color: var(--red); }
+  .blue { color: var(--blue); }
+  .progress-wrap { background: #e5e7eb; border-radius: 9999px; height: 8px; margin-bottom: 12px; }
+  .progress-bar { height: 8px; border-radius: 9999px; background: var(--green); }
+  .progress-label { font-size: 12px; color: var(--text-sec); }
+  .versions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 16px; }
+  .ver-chip { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; font-size: 11px; font-weight: 600; color: var(--text-sec); }
+  .tbl { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .tbl th { text-align: left; padding: 8px 12px; background: var(--bg); border-bottom: 2px solid var(--border); font-weight: 700; color: var(--text-sec); text-transform: uppercase; font-size: 10px; letter-spacing: .05em; }
+  .tbl td { padding: 8px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .tbl tr:last-child td { border-bottom: none; }
+  .mono { font-family: "SFMono-Regular", Consolas, monospace; font-size: 11px; }
+  .fix-block { background: var(--bg-card); border: 1px solid var(--border); border-left: 4px solid var(--accent); border-radius: 8px; padding: 16px 20px; margin-bottom: 16px; }
+  .fix-title { font-weight: 700; font-size: 14px; margin-bottom: 8px; }
+  .fix-row { display: grid; grid-template-columns: 120px 1fr; gap: 4px; font-size: 12px; margin-top: 4px; }
+  .fix-row dt { color: var(--text-sec); font-weight: 600; }
+  details { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 12px; overflow: hidden; }
+  details[open] { border-color: var(--accent); }
+  summary { padding: 12px 16px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; font-weight: 600; font-size: 13px; list-style: none; user-select: none; }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: "▸"; color: var(--text-sec); transition: transform .15s; }
+  details[open] summary::after { transform: rotate(90deg); }
+  .details-inner { padding: 12px 16px 16px; border-top: 1px solid var(--border); }
+  .test-list { list-style: none; display: flex; flex-direction: column; gap: 4px; }
+  .test-item { display: flex; align-items: flex-start; gap: 8px; font-size: 12px; color: var(--text-sec); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+  .dot-pass { background: var(--green); }
+  .class-group { margin-bottom: 12px; }
+  .class-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--text-sec); margin-bottom: 4px; padding: 2px 0; border-bottom: 1px solid var(--border); }
+  .test-name { color: var(--text); }
+  .fixed-badge { background: #fef9c3; color: #92400e; font-size: 9px; font-weight: 700; padding: 0 4px; border-radius: 3px; text-transform: uppercase; margin-left: 6px; }
+  .new-badge { background: #dbeafe; color: #1e40af; font-size: 9px; font-weight: 700; padding: 0 4px; border-radius: 3px; text-transform: uppercase; margin-left: 6px; }
+</style>
+</head>
+<body>
+<div class="layout">
+
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <h2>Portal Test Report</h2>
+    <p>2026-03-08 &middot; branch: main</p>
+  </div>
+  <div class="nav-section">Overview</div>
+  <a class="nav-link" href="#summary">Executive Summary</a>
+  <a class="nav-link" href="#git-changes">Git Changes</a>
+  <a class="nav-link" href="#fixes">Fixes Applied</a>
+  <div class="nav-section">Backend (326 tests)</div>
+  <a class="nav-link" href="#be-deploy">test_bronze_deploy <span class="pill pill-green">6</span></a>
+  <a class="nav-link" href="#be-monitoring">test_bronze_monitoring <span class="pill pill-green">17</span></a>
+  <a class="nav-link" href="#be-sources">test_bronze_sources <span class="pill pill-green">45</span></a>
+  <a class="nav-link" href="#be-concurrency">test_concurrency <span class="pill pill-green">11</span></a>
+  <a class="nav-link" href="#be-edge">test_edge_cases <span class="pill pill-green">24</span></a>
+  <a class="nav-link" href="#be-health">test_health <span class="pill pill-green">6</span></a>
+  <a class="nav-link" href="#be-rag">test_rag <span class="pill pill-green">30</span></a>
+  <a class="nav-link" href="#be-contracts">test_response_contracts <span class="pill pill-green">28</span></a>
+  <a class="nav-link" href="#be-units">test_service_units <span class="pill pill-green">23</span></a>
+  <a class="nav-link" href="#be-silver-deploy">test_silver_deploy <span class="pill pill-green">20</span></a>
+  <a class="nav-link" href="#be-silver-entities">test_silver_entities <span class="pill pill-green">41</span></a>
+  <a class="nav-link" href="#be-silver-modeling">test_silver_modeling <span class="pill pill-green">57</span></a>
+  <a class="nav-link" href="#be-silver-monitoring">test_silver_monitoring <span class="pill pill-green">18</span></a>
+  <div class="nav-section">Frontend (201 tests)</div>
+  <a class="nav-link" href="#fe-api">api.test.ts <span class="pill pill-green">15</span></a>
+  <a class="nav-link" href="#fe-source-suite">SourceTestSuitePage.test.tsx <span class="pill pill-green">15</span></a>
+  <a class="nav-link" href="#fe-bronze-page">BronzePage.test.tsx <span class="pill pill-green">19</span></a>
+  <a class="nav-link" href="#fe-layout">TestingLayout.test.tsx <span class="pill pill-green">5</span></a>
+  <a class="nav-link" href="#fe-dynamic-list">dynamic-list.test.tsx <span class="pill pill-green">6</span></a>
+  <a class="nav-link" href="#fe-form-wizard">form-wizard.test.tsx <span class="pill pill-green">11</span></a>
+  <a class="nav-link" href="#fe-kv">key-value-field.test.tsx <span class="pill pill-green">6</span></a>
+  <a class="nav-link" href="#fe-sidebar">Sidebar.test.tsx <span class="pill pill-green">13</span></a>
+  <a class="nav-link" href="#fe-source-table">source-table.test.tsx <span class="pill pill-green">9</span></a>
+  <a class="nav-link" href="#fe-stats">stats-cards.test.tsx <span class="pill pill-green">5</span></a>
+  <a class="nav-link" href="#fe-status-badge">status-badge.test.tsx <span class="pill pill-green">18</span></a>
+  <a class="nav-link" href="#fe-badge">badge.test.tsx <span class="pill pill-green">9</span></a>
+  <a class="nav-link" href="#fe-button">button.test.tsx <span class="pill pill-green">11</span></a>
+  <a class="nav-link" href="#fe-toast">toast.test.tsx <span class="pill pill-green">7</span></a>
+  <a class="nav-link" href="#fe-hooks">use-sources.test.ts <span class="pill pill-green">10</span></a>
+  <a class="nav-link" href="#fe-constants">constants.test.ts <span class="pill pill-green">10</span></a>
+  <a class="nav-link" href="#fe-utils">utils.test.ts <span class="pill pill-green">8</span></a>
+</nav>
+
+<div class="main">
+
+  <div class="page-header">
+    <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+      <h1>Portal Regression Test Report</h1>
+      <span class="badge-pass">&#10003; ALL PASSING</span>
+    </div>
+    <div class="meta-row">
+      <div class="meta-item">Date <span>2026-03-08</span></div>
+      <div class="meta-item">Branch <span>main</span></div>
+      <div class="meta-item">Executor <span>portal-test agent (Claude Sonnet 4.6)</span></div>
+      <div class="meta-item">Duration <span>~73s (backend 61s + frontend 12s)</span></div>
+      <div class="meta-item">Feature <span>Run Individual Test Cases — Bronze Testing</span></div>
+    </div>
+  </div>
+
+  <!-- Executive Summary -->
+  <div class="section" id="summary">
+    <h2>Executive Summary</h2>
+    <div class="cards">
+      <div class="card"><div class="card-value">527</div><div class="card-label">Total Tests</div></div>
+      <div class="card"><div class="card-value green">527</div><div class="card-label">Passing</div></div>
+      <div class="card"><div class="card-value red">0</div><div class="card-label">Failing</div></div>
+      <div class="card"><div class="card-value blue">18</div><div class="card-label">New This Run</div></div>
+    </div>
+    <div class="progress-wrap"><div class="progress-bar" style="width:100%"></div></div>
+    <p class="progress-label">100% passing &mdash; 527 / 527 tests green &middot; 0 regressions</p>
+    <div class="versions">
+      <span class="ver-chip">pytest 8.x</span>
+      <span class="ver-chip">Vitest 2.1.9</span>
+      <span class="ver-chip">Python 3.12</span>
+      <span class="ver-chip">Node 20.x</span>
+      <span class="ver-chip">FastAPI 0.115.x</span>
+      <span class="ver-chip">Next.js 16</span>
+      <span class="ver-chip">React 19</span>
+    </div>
+    <p style="margin-top:12px;font-size:12px;color:var(--text-sec);">
+      <strong>Non-blocking warning:</strong> Pydantic field name "schema" in DomainSuggestion shadows BaseModel attribute. Pre-existing; not introduced by these changes.
+    </p>
+  </div>
+
+  <!-- Git Changes -->
+  <div class="section" id="git-changes">
+    <h2>Git Changes Tested</h2>
+    <table class="tbl">
+      <thead><tr><th>File</th><th>Type</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="mono">frontend/src/lib/api.ts</td>
+          <td>Modified</td>
+          <td>Added <code>TestCaseResult</code> to testing imports; added <code>runSingleTc(sourceName, tcId)</code> calling <code>POST /testing/suites/{sourceName}/run-tc/{tcId}</code></td>
+        </tr>
+        <tr>
+          <td class="mono">frontend/src/app/testing/bronze/[source]/page.tsx</td>
+          <td>Modified</td>
+          <td>Added <code>runningTcId</code> state, <code>handleRunSingle()</code> handler, per-row &#9654; Run button in <code>TestCaseRow</code>, spinner on in-flight TC, colSpan 7&#8594;8, new "Run" column header</td>
+        </tr>
+        <tr>
+          <td class="mono">frontend/src/__tests__/lib/api.test.ts</td>
+          <td>Modified (+3 tests)</td>
+          <td>Added <code>api.runSingleTc()</code> describe block: correct URL + method, returns TestCaseResult, throws ApiError on non-200</td>
+        </tr>
+        <tr>
+          <td class="mono">frontend/src/__tests__/app/testing/bronze/SourceTestSuitePage.test.tsx</td>
+          <td>New (+15 tests)</td>
+          <td>Full coverage for SourceTestSuitePage: rendering, per-row Run buttons, disabled states during suite run, API call verification, SWR cache mutation, Run Suite / Stop / Download Report button states</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Fixes Applied -->
+  <div class="section" id="fixes">
+    <h2>Fixes Applied</h2>
+    <div class="fix-block">
+      <div class="fix-title">Fix 1 — BronzePage.test.tsx: Missing SWR mock caused 5 test failures</div>
+      <dl>
+        <div class="fix-row"><dt>Root cause</dt><dd>The <code>useTestSuites()</code> hook calls <code>useSWR()</code> internally. Without a per-file mock, <code>isLoading</code> remained <code>true</code> so the component rendered skeleton placeholders — all role/text assertions failed.</dd></div>
+        <div class="fix-row"><dt>Fix</dt><dd>Added <code>vi.mock("swr", () =&gt; ({ default: vi.fn(() =&gt; ({ data: { suites: [] }, isLoading: false, error: null })) }))</code> at top of file.</dd></div>
+        <div class="fix-row"><dt>File</dt><dd class="mono">frontend/src/__tests__/app/testing/bronze/BronzePage.test.tsx</dd></div>
+      </dl>
+    </div>
+    <div class="fix-block">
+      <div class="fix-title">Fix 2 — BronzePage.test.tsx: Stale regex no longer matched component text</div>
+      <dl>
+        <div class="fix-row"><dt>Root cause</dt><dd>Test asserted <code>/test scenarios for the bronze layer/i</code> but the component's empty-state text was updated to "Test suites are auto-generated when you create a Bronze source."</dd></div>
+        <div class="fix-row"><dt>Fix</dt><dd>Updated regex to <code>/test suites are auto-generated/i</code>.</dd></div>
+        <div class="fix-row"><dt>File</dt><dd class="mono">frontend/src/__tests__/app/testing/bronze/BronzePage.test.tsx</dd></div>
+      </dl>
+    </div>
+  </div>
+
+  <!-- Backend Results -->
+  <div class="section" id="backend-results">
+    <h2>Backend Test Results &mdash; 326 / 326 Passing</h2>
+
+    <details id="be-deploy">
+      <summary>test_bronze_deploy.py &mdash; Bronze deploy &amp; trigger <span class="pill pill-green" style="margin-left:8px">6 passed</span></summary>
+      <div class="details-inner">
+        <div class="class-group"><div class="class-label">TestRedeploy</div>
+          <ul class="test-list">
+            <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">test_redeploy_existing_source</span></li>
+            <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">test_redeploy_nonexistent_source</span></li>
+            <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">test_redeploy_returns_job_id_when_db_available</span></li>
+          </ul>
+        </div>
+        <div class="class-group"><div class="class-label">TestTriggerRun</div>
+          <ul class="test-list">
+            <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">test_trigger_no_databricks</span></li>
+            <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">test_trigger_with_run_id</span></li>
+            <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">test_trigger_nonexistent_source</span></li>
+          </ul>
+        </div>
+      </div>
+    </details>
+
+    <details id="be-monitoring">
+      <summary>test_bronze_monitoring.py &mdash; Run history, dead letters, stats <span class="pill pill-green" style="margin-left:8px">17 passed</span></summary>
+      <div class="details-inner">
+        <div class="class-group"><div class="class-label">TestRunHistory (8)</div>
+          <ul class="test-list">
+            <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">test_run_history_404_for_nonexistent &mdash; test_run_history_empty_when_audit_returns_nothing</span></li>
+            <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">test_run_history_with_mock_data &mdash; test_run_history_default_limit</span></li>
+            <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">test_run_history_limit_1 &mdash; test_run_history_limit_200 &mdash; test_run_history_limit_201_rejected &mdash; test_run_history_limit_overflow_rejected</span></li>
+          </ul>
+        </div>
+        <div class="class-group"><div class="class-label">TestDeadLetters (5)</div>
+          <ul class="test-list">
+            <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">test_dead_letters_404_for_nonexistent &mdash; test_dead_letters_empty_when_audit_returns_nothing</span></li>
+            <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">test_dead_letters_with_data &mdash; test_dead_letters_limit_100 &mdash; test_dead_letters_limit_101_rejected</span></li>
+          </ul>
+        </div>
+        <div class="class-group"><div class="class-label">TestDashboardStats (4)</div>
+          <ul class="test-list">
+            <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">test_stats_no_sources &mdash; test_stats_counts &mdash; test_stats_by_type &mdash; test_stats_required_fields</span></li>
+          </ul>
+        </div>
+      </div>
+    </details>
+
+    <details id="be-sources">
+      <summary>test_bronze_sources.py &mdash; Source CRUD <span class="pill pill-green" style="margin-left:8px">45 passed</span></summary>
+      <div class="details-inner">
+        <div class="class-group"><div class="class-label">TestListSources (5), TestCreateSource (10), TestCreateSourceValidation (12)</div>
+          <ul class="test-list">
+            <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">List with filters, create file/jdbc/api/stream sources, validation for missing fields and invalid enums — all 27 passing</span></li>
+          </ul>
+        </div>
+        <div class="class-group"><div class="class-label">TestGetSource (2), TestUpdateSource (5), TestDeleteSource (3), TestValidateSource (8)</div>
+          <ul class="test-list">
+            <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">Get existing/nonexistent, update description/toggle/tags, delete, validate configs — all 18 passing</span></li>
+          </ul>
+        </div>
+      </div>
+    </details>
+
+    <details id="be-concurrency">
+      <summary>test_concurrency.py &mdash; Race conditions &amp; concurrent access <span class="pill pill-green" style="margin-left:8px">11 passed</span></summary>
+      <div class="details-inner">
+        <ul class="test-list">
+          <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">TestConcurrentReads (3) &mdash; TestConcurrentWrites (4) &mdash; TestRaceConditions (4) — all 11 passing</span></li>
+        </ul>
+      </div>
+    </details>
+
+    <details id="be-edge">
+      <summary>test_edge_cases.py &mdash; Edge cases <span class="pill pill-green" style="margin-left:8px">24 passed</span></summary>
+      <div class="details-inner">
+        <ul class="test-list">
+          <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">Special characters, unicode, empty bodies, large payloads, boundary values — all 24 passing</span></li>
+        </ul>
+      </div>
+    </details>
+
+    <details id="be-health">
+      <summary>test_health.py &mdash; Health check endpoint <span class="pill pill-green" style="margin-left:8px">6 passed</span></summary>
+      <div class="details-inner">
+        <ul class="test-list">
+          <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">test_health_returns_200 &mdash; test_health_json_structure &mdash; test_health_status_ok</span></li>
+          <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">test_health_service_versions &mdash; test_health_environment &mdash; test_health_no_auth_required</span></li>
+        </ul>
+      </div>
+    </details>
+
+    <details id="be-rag">
+      <summary>test_rag.py &mdash; RAG Assistant <span class="pill pill-green" style="margin-left:8px">30 passed</span></summary>
+      <div class="details-inner">
+        <ul class="test-list">
+          <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">TestChat, TestChatHistory, TestRebuildIndex, TestIndexStatus — all 30 passing</span></li>
+        </ul>
+      </div>
+    </details>
+
+    <details id="be-contracts">
+      <summary>test_response_contracts.py &mdash; API response shape contracts <span class="pill pill-green" style="margin-left:8px">28 passed</span></summary>
+      <div class="details-inner">
+        <ul class="test-list">
+          <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">Source list, source detail, stats, runs, dead letters shapes verified — all 28 passing</span></li>
+        </ul>
+      </div>
+    </details>
+
+    <details id="be-units">
+      <summary>test_service_units.py &mdash; Service unit tests <span class="pill pill-green" style="margin-left:8px">23 passed</span></summary>
+      <div class="details-inner">
+        <ul class="test-list">
+          <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">ConfigService, DeployService, GitService, DatabricksService — all 23 passing</span></li>
+        </ul>
+      </div>
+    </details>
+
+    <details id="be-silver-deploy">
+      <summary>test_silver_deploy.py &mdash; Silver entity deploy <span class="pill pill-green" style="margin-left:8px">20 passed</span></summary>
+      <div class="details-inner">
+        <ul class="test-list">
+          <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">TestSilverDeploy, TestSilverTrigger — all 20 passing</span></li>
+        </ul>
+      </div>
+    </details>
+
+    <details id="be-silver-entities">
+      <summary>test_silver_entities.py &mdash; Silver entity CRUD <span class="pill pill-green" style="margin-left:8px">41 passed</span></summary>
+      <div class="details-inner">
+        <ul class="test-list">
+          <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">TestListSilverEntities (6), TestGetSilverEntity (3), TestCreateSilverEntity (8), TestUpdateSilverEntity (5), TestDeleteSilverEntity (4), TestValidateSilverEntity (7), TestSilverTesting (8) — all 41 passing</span></li>
+        </ul>
+      </div>
+    </details>
+
+    <details id="be-silver-modeling">
+      <summary>test_silver_modeling.py &mdash; Silver AI modeling <span class="pill pill-green" style="margin-left:8px">57 passed</span></summary>
+      <div class="details-inner">
+        <ul class="test-list">
+          <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">TestProfileTable (5), TestListBronzeTables (3), TestSuggestModel (3), TestSuggestEnterpriseModel (3), + 43 more — all 57 passing</span></li>
+        </ul>
+      </div>
+    </details>
+
+    <details id="be-silver-monitoring">
+      <summary>test_silver_monitoring.py &mdash; Silver stats, runs &amp; diagram <span class="pill pill-green" style="margin-left:8px">18 passed</span></summary>
+      <div class="details-inner">
+        <div class="class-group"><div class="class-label">TestSilverStats (4)</div>
+          <ul class="test-list">
+            <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">test_stats_empty &mdash; test_stats_required_fields &mdash; test_stats_counts &mdash; test_stats_by_domain</span></li>
+          </ul>
+        </div>
+        <div class="class-group"><div class="class-label">TestSilverEntityRuns (3)</div>
+          <ul class="test-list">
+            <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">test_runs_for_nonexistent_entity_returns_empty &mdash; test_runs_for_existing_entity_db_unavailable &mdash; test_runs_with_limit</span></li>
+          </ul>
+        </div>
+        <div class="class-group"><div class="class-label">TestSilverDiagram (3) + TestSilverStats extra (8)</div>
+          <ul class="test-list">
+            <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">test_diagram_empty &mdash; test_diagram_with_entities &mdash; test_diagram_contains_entity_name — all passing</span></li>
+          </ul>
+        </div>
+      </div>
+    </details>
+  </div>
+
+  <!-- Frontend Results -->
+  <div class="section" id="frontend-results">
+    <h2>Frontend Test Results &mdash; 201 / 201 Passing</h2>
+
+    <details open id="fe-api">
+      <summary>api.test.ts &mdash; API client methods <span class="pill pill-green" style="margin-left:8px">15 passed</span></summary>
+      <div class="details-inner">
+        <div class="class-group"><div class="class-label">api.runSingleTc() <span class="new-badge">new</span></div>
+          <ul class="test-list">
+            <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">calls POST /testing/suites/{sourceName}/run-tc/{tcId}</span></li>
+            <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">returns the TestCaseResult from the response</span></li>
+            <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">throws ApiError on non-200 response</span></li>
+          </ul>
+        </div>
+        <div class="class-group"><div class="class-label">Existing methods (12)</div>
+          <ul class="test-list">
+            <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">api.listSources, api.getSource, api.createSource, api.deleteSource, api.getDashboardStats</span></li>
+            <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">error handling (3), API key header injection (2), SSE streaming (1) — all 12 passing</span></li>
+          </ul>
+        </div>
+      </div>
+    </details>
+
+    <details open id="fe-source-suite">
+      <summary>SourceTestSuitePage.test.tsx &mdash; Bronze source test suite detail <span class="pill pill-green" style="margin-left:8px">15 passed</span> <span class="new-badge">new file</span></summary>
+      <div class="details-inner">
+        <div class="class-group"><div class="class-label">SourceTestSuitePage — rendering (8)</div>
+          <ul class="test-list">
+            <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">renders source name as heading</span></li>
+            <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">renders Run Suite button</span></li>
+            <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">renders a row for each test case</span></li>
+            <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">renders per-row Run buttons (one per test case)</span></li>
+            <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">renders a 'Run' column header in the table</span></li>
+            <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">shows NOT_RUN status badge when no results exist</span></li>
+            <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">shows loading skeleton when suite is loading</span></li>
+            <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">shows not-found card when suite is null</span></li>
+          </ul>
+        </div>
+        <div class="class-group"><div class="class-label">SourceTestSuitePage — per-row Run button (4)</div>
+          <ul class="test-list">
+            <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">individual Run buttons are enabled when no suite is running</span></li>
+            <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">individual Run buttons are disabled while suite is running</span></li>
+            <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">calls api.runSingleTc with correct source and tcId on click</span></li>
+            <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">calls mutate to update SWR cache after single TC run</span></li>
+          </ul>
+        </div>
+        <div class="class-group"><div class="class-label">SourceTestSuitePage — Run Suite button (3)</div>
+          <ul class="test-list">
+            <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">Run Suite button is enabled when not running</span></li>
+            <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">shows Stop button when suite is running</span></li>
+            <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">shows Download Report button when results exist and not running</span></li>
+          </ul>
+        </div>
+      </div>
+    </details>
+
+    <details open id="fe-bronze-page">
+      <summary>BronzePage.test.tsx &mdash; Bronze Testing list page <span class="pill pill-green" style="margin-left:8px">19 passed</span> <span class="fixed-badge">2 fixed</span></summary>
+      <div class="details-inner">
+        <div class="class-group"><div class="class-label">BronzeTestingPage — header row (3)</div>
+          <ul class="test-list">
+            <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">renders the page heading 'Test Suite'</span></li>
+            <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">renders a 'Run All' button</span></li>
+            <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">'Run All' button is disabled when no suites exist</span></li>
+          </ul>
+        </div>
+        <div class="class-group"><div class="class-label">BronzeTestingPage — layer tab strip (8)</div>
+          <ul class="test-list">
+            <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">renders Bronze tab (as link, points to /testing/bronze, has accent border) <span class="fixed-badge">fixed</span></span></li>
+            <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">renders Silver tab (not a link, cursor-not-allowed, shows 'coming soon')</span></li>
+          </ul>
+        </div>
+        <div class="class-group"><div class="class-label">BronzeTestingPage — stats cards / empty state (8)</div>
+          <ul class="test-list">
+            <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">Total Suites / Passing / Failing / Not Run labels — all four stat values show 0</span></li>
+            <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">empty state heading &mdash; helper description text <span class="fixed-badge">fixed</span></span></li>
+            <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">SVG icon inside empty state &mdash; subtitle about row counts / data quality</span></li>
+          </ul>
+        </div>
+      </div>
+    </details>
+
+    <details id="fe-layout">
+      <summary>TestingLayout.test.tsx &mdash; Testing layout wrapper <span class="pill pill-green" style="margin-left:8px">5 passed</span></summary>
+      <div class="details-inner">
+        <ul class="test-list">
+          <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">renders children &mdash; Sidebar (aside) &mdash; Header (sticky) &mdash; children in main &mdash; full-height container</span></li>
+        </ul>
+      </div>
+    </details>
+
+    <details id="fe-dynamic-list">
+      <summary>dynamic-list.test.tsx &mdash; DynamicList component <span class="pill pill-green" style="margin-left:8px">6 passed</span></summary>
+      <div class="details-inner">
+        <ul class="test-list">
+          <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">renders label &mdash; no inputs initially &mdash; renders existing items &mdash; adds empty item on click &mdash; updates on type &mdash; removes on trash click</span></li>
+        </ul>
+      </div>
+    </details>
+
+    <details id="fe-form-wizard">
+      <summary>form-wizard.test.tsx &mdash; FormWizard component <span class="pill pill-green" style="margin-left:8px">11 passed</span></summary>
+      <div class="details-inner">
+        <ul class="test-list">
+          <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">step 1 title/description/content &mdash; Previous disabled on step 1</span></li>
+          <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">Continue navigates to step 2 &mdash; Previous goes back &mdash; sidebar click jumps directly</span></li>
+          <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">Submit on last step &mdash; Submit with 1 step &mdash; onSubmit called &mdash; custom submitLabel &mdash; Creating&#8230; when submitting</span></li>
+        </ul>
+      </div>
+    </details>
+
+    <details id="fe-kv">
+      <summary>key-value-field.test.tsx &mdash; KeyValueField component <span class="pill pill-green" style="margin-left:8px">6 passed</span></summary>
+      <div class="details-inner">
+        <ul class="test-list">
+          <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">renders label &mdash; no inputs initially &mdash; renders existing pairs &mdash; adds empty pair &mdash; updates value on type &mdash; removes on trash click</span></li>
+        </ul>
+      </div>
+    </details>
+
+    <details id="fe-sidebar">
+      <summary>Sidebar.test.tsx &mdash; Sidebar navigation <span class="pill pill-green" style="margin-left:8px">13 passed</span></summary>
+      <div class="details-inner">
+        <div class="class-group"><div class="class-label">Testing section (9)</div>
+          <ul class="test-list">
+            <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">Testing section heading &mdash; Bronze Tests link (/testing/bronze) &mdash; Silver Tests disabled (cursor-not-allowed, not a link, 'soon' badge)</span></li>
+            <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">Bronze Tests active at /testing/bronze &mdash; inactive at /bronze &mdash; active at sub-path</span></li>
+          </ul>
+        </div>
+        <div class="class-group"><div class="class-label">Existing sections (4)</div>
+          <ul class="test-list">
+            <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">Bronze Layer, Silver Layer, Gold Layer (Coming Soon), AI Assistant — all present</span></li>
+          </ul>
+        </div>
+      </div>
+    </details>
+
+    <details id="fe-source-table">
+      <summary>source-table.test.tsx &mdash; SourceTable component <span class="pill pill-green" style="margin-left:8px">9 passed</span></summary>
+      <div class="details-inner">
+        <ul class="test-list">
+          <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">loading state: 5 skeleton rows, no table &mdash; empty state: text + CTA + no table</span></li>
+          <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">with data: names as links, table element, monospace target, type badge, search input</span></li>
+          <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">search filters rows by name &mdash; clearing search shows all rows</span></li>
+        </ul>
+      </div>
+    </details>
+
+    <details id="fe-stats">
+      <summary>stats-cards.test.tsx &mdash; StatsCards component <span class="pill pill-green" style="margin-left:8px">5 passed</span></summary>
+      <div class="details-inner">
+        <ul class="test-list">
+          <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">4 skeletons when loading &mdash; values when stats provided &mdash; 0s when stats undefined &mdash; card labels &mdash; no skeletons when not loading</span></li>
+        </ul>
+      </div>
+    </details>
+
+    <details id="fe-status-badge">
+      <summary>status-badge.test.tsx &mdash; TypeBadge, StatusBadge, CdcBadge, EnabledDot <span class="pill pill-green" style="margin-left:8px">18 passed</span></summary>
+      <div class="details-inner">
+        <ul class="test-list">
+          <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">TypeBadge: JDBC/FILE/API/STREAM rendering + variant mapping (info/accent/warning/default)</span></li>
+          <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">StatusBadge: SUCCESS/FAILURE/RUNNING/unknown &mdash; CdcBadge: scd2/upsert/append + variants</span></li>
+          <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">EnabledDot: title text &mdash; bg-success when enabled &mdash; bg-text-tertiary when disabled</span></li>
+        </ul>
+      </div>
+    </details>
+
+    <details id="fe-badge">
+      <summary>badge.test.tsx &mdash; Badge component <span class="pill pill-green" style="margin-left:8px">9 passed</span></summary>
+      <div class="details-inner">
+        <ul class="test-list">
+          <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">renders children &mdash; 6 variants (default/accent/success/warning/error/info) &mdash; defaults to default &mdash; accepts className &mdash; renders as span</span></li>
+        </ul>
+      </div>
+    </details>
+
+    <details id="fe-button">
+      <summary>button.test.tsx &mdash; Button component <span class="pill pill-green" style="margin-left:8px">11 passed</span></summary>
+      <div class="details-inner">
+        <ul class="test-list">
+          <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">renders children &mdash; 4 variants (primary/secondary/ghost/danger) &mdash; 3 sizes (sm/md/lg)</span></li>
+          <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">disabled: prop + opacity class + no onClick &mdash; forwards onClick &mdash; accepts className &mdash; defaults to primary</span></li>
+        </ul>
+      </div>
+    </details>
+
+    <details id="fe-toast">
+      <summary>toast.test.tsx &mdash; ToastProvider / useToast <span class="pill pill-green" style="margin-left:8px">7 passed</span></summary>
+      <div class="details-inner">
+        <ul class="test-list">
+          <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">shows toast message &mdash; auto-dismisses after 4000ms &mdash; does NOT dismiss before 4000ms</span></li>
+          <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">removes toast on X click &mdash; can show second toast while first is visible &mdash; success/error styling</span></li>
+        </ul>
+      </div>
+    </details>
+
+    <details id="fe-hooks">
+      <summary>use-sources.test.ts &mdash; SWR hooks <span class="pill pill-green" style="margin-left:8px">10 passed</span></summary>
+      <div class="details-inner">
+        <ul class="test-list">
+          <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">useSources (3): null key, query-string key, returns SWR value</span></li>
+          <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">useSource (2) &mdash; useDashboardStats (1) &mdash; useRunHistory (2) &mdash; useDeadLetters (2)</span></li>
+        </ul>
+      </div>
+    </details>
+
+    <details id="fe-constants">
+      <summary>constants.test.ts &mdash; UI constants / dropdown options <span class="pill pill-green" style="margin-left:8px">10 passed</span></summary>
+      <div class="details-inner">
+        <ul class="test-list">
+          <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">SOURCE_TYPES (4 entries, valid shapes) &mdash; CDC_MODES (3) &mdash; LOAD_TYPES (2) &mdash; FILE_FORMATS (6)</span></li>
+          <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">SCHEMA_EVOLUTION_MODES &mdash; AUTH_TYPES &mdash; PAGINATION_TYPES &mdash; METADATA_EXPRESSIONS &mdash; API_BASE_URL fallback</span></li>
+        </ul>
+      </div>
+    </details>
+
+    <details id="fe-utils">
+      <summary>utils.test.ts &mdash; cn() utility <span class="pill pill-green" style="margin-left:8px">8 passed</span></summary>
+      <div class="details-inner">
+        <ul class="test-list">
+          <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">empty string with no args &mdash; merges multiple classes &mdash; ignores falsy values</span></li>
+          <li class="test-item"><span class="dot dot-pass"></span><span class="test-name">resolves Tailwind conflicts (last wins) &mdash; mixed conflicts &mdash; accepts arrays &mdash; conditional objects &mdash; no duplicate non-conflicting classes</span></li>
+        </ul>
+      </div>
+    </details>
+
+  </div>
+</div>
+</div>
+
+<script>
+  const links = document.querySelectorAll('.nav-link[href^="#"]');
+  const targets = Array.from(links).map(l => document.querySelector(l.getAttribute('href'))).filter(Boolean);
+  function setActive() {
+    let current = '';
+    targets.forEach(s => { if (s && s.getBoundingClientRect().top <= 120) current = '#' + s.id; });
+    links.forEach(l => l.classList.toggle('active', l.getAttribute('href') === current));
+  }
+  document.addEventListener('scroll', setActive, { passive: true });
+  setActive();
+</script>
+</body>
+</html>

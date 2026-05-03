@@ -3,12 +3,12 @@
 import { MessageSquare } from "lucide-react";
 
 const SUGGESTIONS = [
+  "I want to create a new bronze pipeline",
+  "I want to model a Bronze table for Silver",
   "What sources are currently configured?",
   "How does SCD2 work in this framework?",
-  "How do I add a new source?",
   "When was the last successful run?",
   "What is the medallion architecture?",
-  "How does data flow from Bronze to Gold?",
 ];
 
 interface SuggestedQuestionsProps {

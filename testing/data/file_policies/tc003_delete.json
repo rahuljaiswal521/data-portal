@@ -1,0 +1,1 @@
+{"policy_id": "POL004", "customer_id": "C003", "policy_type": "life", "status": "lapsed", "start_date": "2021-07-01", "end_date": "2023-06-30", "premium_amount": 600.00, "coverage_amount": 250000.00, "excess": 0.00, "_cdc_operation": "DELETE", "updated_at": "2023-07-02T00:00:00Z"}

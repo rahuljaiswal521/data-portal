@@ -136,3 +136,96 @@ class TestSuggestEnterpriseModel:
         resp = client.post(f"{BASE}/suggest-enterprise-model/stream", json=payload)
         assert resp.status_code == 200
         assert "text/event-stream" in resp.headers.get("content-type", "")
+
+
+class TestTenantIdThreading:
+    """Verify that the current tenant_id is threaded through to service calls.
+
+    After the multi-provider refactor, the route no longer pre-fetches an
+    Anthropic key — it passes the tenant_id and lets ai_client_service resolve
+    the correct provider/key based on the tenant's selected model.
+    """
+
+    def test_suggest_enterprise_model_passes_tenant_id(
+        self, client, mock_modeling, mock_tenant
+    ):
+        """The route forwards tenant_id (not api_key) to suggest_enterprise_model."""
+        mock_tenant.ensure_default_tenant()
+        payload = {"tables": ["dev.bronze.orders"], "catalog": "dev"}
+        resp = client.post(f"{BASE}/suggest-enterprise-model", json=payload)
+        assert resp.status_code == 200
+        mock_modeling.suggest_enterprise_model.assert_called_once_with(
+            ["dev.bronze.orders"], "dev", tenant_id="default"
+        )
+
+    def test_suggest_enterprise_model_does_not_pass_api_key(
+        self, client, mock_modeling
+    ):
+        """The route no longer passes api_key — the service resolves it itself."""
+        payload = {"tables": ["dev.bronze.orders"], "catalog": "dev"}
+        client.post(f"{BASE}/suggest-enterprise-model", json=payload)
+        call_kwargs = mock_modeling.suggest_enterprise_model.call_args
+        assert "api_key" not in call_kwargs.kwargs
+        assert call_kwargs.kwargs.get("tenant_id") == "default"
+
+    def test_suggest_model_passes_tenant_id(
+        self, client, mock_modeling, mock_tenant
+    ):
+        """The route forwards tenant_id (not api_key) to suggest_model."""
+        from app.models.silver_modeling import SuggestModelResponse
+        mock_modeling.suggest_model.return_value = SuggestModelResponse(
+            name="customer", domain="customer", description="Customer entity"
+        )
+        mock_tenant.ensure_default_tenant()
+        payload = {"tables": [{"full_table_name": "dev.bronze.customers"}]}
+        resp = client.post(f"{BASE}/suggest-model", json=payload)
+        assert resp.status_code == 200
+        call_kwargs = mock_modeling.suggest_model.call_args
+        assert "api_key" not in call_kwargs.kwargs
+        assert call_kwargs.kwargs.get("tenant_id") == "default"
+
+
+class TestSuggestModelNoKey:
+    """Silver modeling suggest-model returns error when no tenant API key is set."""
+
+    def test_suggest_model_no_key_returns_error_field(self, client, mock_modeling):
+        """When no tenant key is set, suggest_model returns a response with error set."""
+        from app.models.silver_modeling import SuggestModelResponse
+
+        mock_modeling.suggest_model.return_value = SuggestModelResponse(
+            error="AI modeling is not available. Set your Anthropic API key in Settings.",
+        )
+        payload = {"tables": [{"full_table_name": "dev.bronze.customers"}]}
+        resp = client.post(f"{BASE}/suggest-model", json=payload)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["error"] is not None
+        assert "Anthropic API key" in data["error"]
+
+    def test_suggest_model_no_key_passes_none_to_service(self, client, mock_modeling):
+        """When no tenant key is configured, api_key=None is passed to suggest_model."""
+        from app.models.silver_modeling import SuggestModelResponse
+
+        mock_modeling.suggest_model.return_value = SuggestModelResponse(
+            error="AI modeling is not available. Set your Anthropic API key in Settings.",
+        )
+        payload = {"tables": [{"full_table_name": "dev.bronze.customers"}]}
+        client.post(f"{BASE}/suggest-model", json=payload)
+        call_kwargs = mock_modeling.suggest_model.call_args
+        assert call_kwargs.kwargs.get("api_key") is None
+
+    def test_suggest_enterprise_model_no_key_returns_error_field(
+        self, client, mock_modeling
+    ):
+        """When no tenant key is set, suggest_enterprise_model returns a response with error."""
+        from app.models.silver_modeling import EnterpriseModelResponse
+
+        mock_modeling.suggest_enterprise_model.return_value = EnterpriseModelResponse(
+            error="AI modeling is not available. Set your Anthropic API key in Settings.",
+        )
+        payload = {"tables": ["dev.bronze.customers"], "catalog": "dev"}
+        resp = client.post(f"{BASE}/suggest-enterprise-model", json=payload)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["error"] is not None
+        assert "Anthropic API key" in data["error"]

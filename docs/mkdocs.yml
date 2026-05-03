@@ -1,0 +1,85 @@
+site_name: Data Platform Portal — User Guide
+site_description: Self-service Medallion Architecture pipeline portal for Bronze, Silver and Gold data layers
+site_author: Data Engineering Team
+docs_dir: docs
+site_dir: site
+
+theme:
+  name: material
+  palette:
+    - scheme: slate
+      primary: deep orange
+      accent: deep orange
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+    - scheme: default
+      primary: deep orange
+      accent: deep orange
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+  features:
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.highlight
+    - search.suggest
+    - content.tabs.link
+    - content.code.copy
+    - content.code.annotate
+    - toc.follow
+  logo: assets/img/ecran-logo.png
+  favicon: assets/img/favicon.png
+
+extra_css:
+  - assets/css/extra.css
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - tables
+  - attr_list
+  - md_in_html
+  - def_list
+  - footnotes
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Architecture Overview: overview.md
+  - Bronze Layer:
+      - Overview: bronze/index.md
+      - Create a Source: bronze/create-source.md
+      - Deploy to Databricks: bronze/deploy.md
+      - Monitor Pipelines: bronze/monitor.md
+      - Data Quality: bronze/quality.md
+      - Pipeline Testing: bronze/testing.md
+  - Silver Layer:
+      - Overview: silver/index.md
+      - Create an Entity: silver/create-entity.md
+      - AI Model Advisor: silver/model-advisor.md
+      - Deploy an Entity: silver/deploy.md
+      - Entity Diagram: silver/diagram.md
+  - Platform:
+      - Getting Started: platform/getting-started.md
+      - Authentication: platform/authentication.md
+      - User Management: platform/user-management.md
+      - AI Assistant: platform/ai-assistant.md
+      - Architecture Page: platform/architecture.md
+  - Reference:
+      - Source Types: reference/source-types.md
+      - YAML Schema: reference/yaml-schema.md
+      - Glossary: reference/glossary.md

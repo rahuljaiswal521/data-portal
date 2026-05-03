@@ -1,0 +1,80 @@
+name: {{ name }}
+domain: {{ domain }}
+description: "{{ description }}"
+enabled: {{ enabled | lower }}
+{%- if entity_type is defined and entity_type != "standard" %}
+entity_type: {{ entity_type }}
+{%- endif %}
+{%- if tags %}
+
+tags:
+{%- for key, value in tags.items() %}
+  {{ key }}: {{ value }}
+{%- endfor %}
+{%- endif %}
+{%- if sources %}
+
+sources:
+{%- for source in sources %}
+  - bronze_table: {{ source.bronze_table }}
+    priority: {{ source.priority }}
+{%- if source.filter_condition is not none %}
+    filter_condition: "{{ source.filter_condition }}"
+{%- endif %}
+{%- if source.temporal is not none %}
+    temporal:
+      start_column: {{ source.temporal.start_column }}
+      end_column: {{ source.temporal.end_column }}
+      end_inclusive: {{ source.temporal.end_inclusive | lower }}
+{%- endif %}
+    watermark:
+      column: {{ source.watermark.column }}
+      type: {{ source.watermark.type }}
+{%- if source.watermark.default_value is not none %}
+      default_value: "{{ source.watermark.default_value }}"
+{%- endif %}
+{%- if source.columns %}
+    columns:
+{%- for col in source.columns %}
+      - source: {{ col.source }}
+        target: {{ col.target }}
+{%- if col.transform is not none %}
+        transform: "{{ col.transform }}"
+{%- endif %}
+{%- if col.default_value is not none %}
+        default_value: "{{ col.default_value }}"
+{%- endif %}
+{%- endfor %}
+{%- endif %}
+{%- endfor %}
+{%- endif %}
+
+target:
+  catalog: {{ target.catalog }}
+  schema: {{ target.schema_name }}
+  table: {{ target.table }}
+  scd_type: {{ target.scd_type }}
+{%- if target.business_keys %}
+  business_keys:
+{%- for key in target.business_keys %}
+    - {{ key }}
+{%- endfor %}
+{%- endif %}
+{%- if target.partition_by %}
+  partition_by:
+{%- for col in target.partition_by %}
+    - {{ col }}
+{%- endfor %}
+{%- endif %}
+{%- if target.exclude_columns_from_hash %}
+  exclude_columns_from_hash:
+{%- for col in target.exclude_columns_from_hash %}
+    - {{ col }}
+{%- endfor %}
+{%- endif %}
+{%- if schedule %}
+
+schedule:
+  cron_expression: "{{ schedule.cron_expression }}"
+  timezone: {{ schedule.timezone }}
+{%- endif %}

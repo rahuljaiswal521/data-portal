@@ -214,3 +214,56 @@ export interface IndexStatus {
   shared_doc_chunks: number;
   tenant_source_chunks: number;
 }
+
+export interface ProviderKeyStatus {
+  configured: boolean;
+  preview: string | null;
+}
+
+export type AIProvider = "anthropic" | "openai" | "gemini";
+
+export interface AvailableModel {
+  id: string;
+  name: string;
+  description: string;
+  provider: AIProvider;
+}
+
+export interface AvailableModelsResponse {
+  models: AvailableModel[];
+  default_model: string;
+}
+
+export interface AccountSettingsResponse {
+  anthropic: ProviderKeyStatus;
+  openai: ProviderKeyStatus;
+  gemini: ProviderKeyStatus;
+  selected_model: string;
+  selected_provider: AIProvider;
+  // legacy
+  has_anthropic_key: boolean;
+  anthropic_key_preview: string | null;
+}
+
+// ── Authentication ────────────────────────────────────────────────────────────
+
+export interface LoginRequest {
+  username: string;
+  password: string;
+}
+
+export interface LoginResponse {
+  api_key: string;
+  tenant_id: string;
+  username: string;
+  display_name: string | null;
+  role: string;
+}
+
+export interface CurrentUser {
+  tenant_id: string;
+  username: string | null;
+  display_name: string | null;
+  role: string;
+  last_login: string | null;
+}

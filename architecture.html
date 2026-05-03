@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Data Platform Portal — Architecture Overview</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: #faf8f5;
+      color: #2d2926;
+      line-height: 1.6;
+    }
+
+    /* ── HEADER ─────────────────────────────────────────────── */
+    .site-header {
+      background: linear-gradient(135deg, #2d2926 0%, #3d3430 60%, #4a3028 100%);
+      color: #fff;
+      padding: 48px 40px 40px;
+      position: relative;
+      overflow: hidden;
+    }
+    .site-header::before {
+      content: '';
+      position: absolute;
+      top: -60px; right: -60px;
+      width: 280px; height: 280px;
+      border-radius: 50%;
+      background: rgba(217, 119, 87, 0.18);
+    }
+    .site-header::after {
+      content: '';
+      position: absolute;
+      bottom: -80px; left: 30%;
+      width: 200px; height: 200px;
+      border-radius: 50%;
+      background: rgba(217, 119, 87, 0.10);
+    }
+    .header-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+    }
+    .header-eyebrow {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: #d97757;
+      margin-bottom: 12px;
+    }
+    .header-title {
+      font-size: clamp(26px, 4vw, 42px);
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      line-height: 1.15;
+      color: #fff;
+    }
+    .header-title span { color: #d97757; }
+    .header-meta {
+      margin-top: 20px;
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+    .header-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: rgba(255,255,255,0.72);
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 20px;
+      padding: 4px 14px;
+    }
+    .header-badge strong { color: rgba(255,255,255,0.92); }
+
+    /* ── LAYOUT ─────────────────────────────────────────────── */
+    .page-body {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 48px 32px 80px;
+    }
+
+    /* ── SECTION ────────────────────────────────────────────── */
+    .section {
+      margin-bottom: 56px;
+    }
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 28px;
+    }
+    .section-number {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: #d97757;
+      color: #fff;
+      font-size: 15px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .section-title {
+      font-size: clamp(18px, 2.5vw, 24px);
+      font-weight: 700;
+      color: #2d2926;
+      letter-spacing: -0.2px;
+    }
+    .section-icon {
+      font-size: 22px;
+      margin-right: 2px;
+    }
+
+    /* ── CARD ───────────────────────────────────────────────── */
+    .card {
+      background: #fff;
+      border: 1px solid #ede9e3;
+      border-radius: 16px;
+      padding: 28px 32px;
+      box-shadow: 0 2px 12px rgba(45,41,38,0.06);
+    }
+    .card p + p { margin-top: 12px; }
+    .card p {
+      font-size: 15px;
+      color: #4a4540;
+    }
+
+    /* ── INTRO GRID ─────────────────────────────────────────── */
+    .intro-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 18px;
+      margin-top: 22px;
+    }
+    .intro-feature {
+      background: #fff;
+      border: 1px solid #ede9e3;
+      border-radius: 12px;
+      padding: 20px;
+      border-top: 3px solid #d97757;
+    }
+    .intro-feature .feat-icon { font-size: 26px; margin-bottom: 10px; }
+    .intro-feature h4 {
+      font-size: 14px;
+      font-weight: 700;
+      color: #2d2926;
+      margin-bottom: 6px;
+    }
+    .intro-feature p {
+      font-size: 13px;
+      color: #6b6560;
+      line-height: 1.5;
+    }
+
+    /* ── ARCHITECTURE DIAGRAM ───────────────────────────────── */
+    .arch-diagram {
+      background: #fff;
+      border: 1px solid #ede9e3;
+      border-radius: 16px;
+      padding: 36px;
+      box-shadow: 0 2px 12px rgba(45,41,38,0.06);
+    }
+    .arch-cols {
+      display: grid;
+      grid-template-columns: 1fr 260px;
+      gap: 32px;
+      align-items: start;
+    }
+    @media (max-width: 700px) {
+      .arch-cols { grid-template-columns: 1fr; }
+    }
+
+    /* main flow column */
+    .arch-flow { display: flex; flex-direction: column; align-items: center; }
+
+    .arch-box {
+      width: 100%;
+      max-width: 440px;
+      border-radius: 12px;
+      padding: 16px 20px;
+      text-align: center;
+      position: relative;
+    }
+    .arch-box .box-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .arch-box .box-title {
+      font-size: 16px;
+      font-weight: 700;
+    }
+    .arch-box .box-sub {
+      font-size: 12px;
+      margin-top: 3px;
+      opacity: 0.75;
+    }
+
+    .box-browser {
+      background: #f0ede8;
+      border: 2px solid #c5bfb7;
+      color: #2d2926;
+    }
+    .box-aca {
+      background: #fff5f1;
+      border: 2px solid #d97757;
+      color: #2d2926;
+    }
+    .box-databricks {
+      background: #fff8f0;
+      border: 2px solid #e8a870;
+      color: #2d2926;
+    }
+    .box-delta {
+      background: #f5f0eb;
+      border: 2px dashed #b8a898;
+      color: #2d2926;
+    }
+
+    /* inner split for ACA box */
+    .aca-inner {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .aca-service {
+      flex: 1;
+      background: #fff;
+      border: 1px solid #e8d5c8;
+      border-radius: 8px;
+      padding: 10px;
+      font-size: 12px;
+    }
+    .aca-service .svc-icon { font-size: 20px; }
+    .aca-service .svc-name { font-weight: 700; color: #2d2926; margin: 4px 0 2px; }
+    .aca-service .svc-tech { color: #d97757; font-size: 11px; font-weight: 600; }
+    .aca-service .svc-desc { color: #6b6560; margin-top: 3px; line-height: 1.4; }
+
+    /* arrow */
+    .arch-arrow {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 4px 0;
+      color: #d97757;
+    }
+    .arch-arrow .arrow-line {
+      width: 2px;
+      height: 22px;
+      background: #d97757;
+    }
+    .arch-arrow .arrow-head {
+      font-size: 18px;
+      line-height: 1;
+      margin-top: -4px;
+    }
+    .arch-arrow .arrow-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      color: #a06848;
+      margin-top: 3px;
+      background: #fff5f1;
+      border: 1px solid #e8c8b8;
+      border-radius: 10px;
+      padding: 2px 10px;
+    }
+
+    /* supporting services column */
+    .arch-services h4 {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: #8a8078;
+      margin-bottom: 14px;
+    }
+    .service-card {
+      background: #faf8f5;
+      border: 1px solid #e0dbd3;
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+    }
+    .service-card .sc-top {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 5px;
+    }
+    .service-card .sc-icon { font-size: 18px; }
+    .service-card .sc-name { font-size: 13px; font-weight: 700; color: #2d2926; }
+    .service-card .sc-detail { font-size: 12px; color: #6b6560; font-family: 'Courier New', monospace; }
+    .service-card .sc-desc { font-size: 12px; color: #8a8078; margin-top: 4px; line-height: 1.4; }
+
+    /* ── DEPLOYMENT FLOW ────────────────────────────────────── */
+    .deploy-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+    .deploy-step {
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+    }
+    .deploy-step-left {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .step-dot {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: #d97757;
+      color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .step-line {
+      width: 2px;
+      flex: 1;
+      min-height: 28px;
+      background: linear-gradient(to bottom, #d97757, #e8c8b8);
+      margin: 4px 0;
+    }
+    .deploy-step:last-child .step-line { display: none; }
+    .step-content {
+      padding-bottom: 28px;
+      flex: 1;
+    }
+    .step-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #2d2926;
+      margin-bottom: 4px;
+    }
+    .step-desc {
+      font-size: 13.5px;
+      color: #6b6560;
+      line-height: 1.5;
+    }
+    .step-code {
+      display: inline-block;
+      background: #2d2926;
+      color: #f5c49a;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      padding: 6px 14px;
+      border-radius: 6px;
+      margin-top: 8px;
+    }
+    .step-time {
+      display: inline-block;
+      background: #fff5f1;
+      border: 1px solid #e8c8b8;
+      color: #d97757;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 10px;
+      border-radius: 10px;
+      margin-top: 6px;
+      margin-left: 4px;
+    }
+
+    /* ── SECURITY ───────────────────────────────────────────── */
+    .security-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 18px;
+    }
+    .security-item {
+      background: #fff;
+      border: 1px solid #ede9e3;
+      border-radius: 12px;
+      padding: 22px;
+      position: relative;
+      overflow: hidden;
+    }
+    .security-item::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: #d97757;
+    }
+    .security-item.offline::before { background: #c0392b; }
+    .security-item.online::before { background: #27ae60; }
+    .security-item .sec-icon { font-size: 28px; margin-bottom: 10px; }
+    .security-item h4 {
+      font-size: 14px;
+      font-weight: 700;
+      color: #2d2926;
+      margin-bottom: 6px;
+    }
+    .security-item p {
+      font-size: 13px;
+      color: #6b6560;
+      line-height: 1.5;
+    }
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 10px;
+      margin-bottom: 8px;
+    }
+    .status-offline {
+      background: #fde8e8;
+      color: #c0392b;
+      border: 1px solid #f5c6c6;
+    }
+    .status-online {
+      background: #e8f8ee;
+      color: #1e8449;
+      border: 1px solid #b8e8c8;
+    }
+    .status-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+    }
+    .status-offline .status-dot { background: #c0392b; }
+    .status-online .status-dot { background: #27ae60; }
+
+    /* ── URLS TABLE ─────────────────────────────────────────── */
+    .urls-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .url-row {
+      background: #fff;
+      border: 1px solid #ede9e3;
+      border-radius: 10px;
+      padding: 14px 20px;
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+    .url-row .url-icon { font-size: 20px; flex-shrink: 0; margin-top: 2px; }
+    .url-row .url-info { flex: 1; min-width: 180px; }
+    .url-row .url-label {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: #8a8078;
+      margin-bottom: 3px;
+    }
+    .url-row .url-value {
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      color: #d97757;
+      word-break: break-all;
+    }
+    .url-row .url-desc {
+      font-size: 12px;
+      color: #8a8078;
+      margin-top: 2px;
+    }
+
+    /* ── SCRIPTS TABLE ──────────────────────────────────────── */
+    .scripts-table-wrap {
+      overflow-x: auto;
+      border-radius: 12px;
+      border: 1px solid #ede9e3;
+      box-shadow: 0 2px 8px rgba(45,41,38,0.05);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      font-size: 14px;
+    }
+    thead tr {
+      background: #2d2926;
+      color: #fff;
+    }
+    thead th {
+      padding: 14px 18px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 12px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    tbody tr {
+      border-bottom: 1px solid #f0ece6;
+    }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:nth-child(even) { background: #fdf9f6; }
+    tbody td {
+      padding: 13px 18px;
+      vertical-align: top;
+      color: #4a4540;
+    }
+    tbody td:first-child {
+      font-weight: 700;
+      color: #2d2926;
+    }
+    .cmd-code {
+      font-family: 'Courier New', monospace;
+      font-size: 12.5px;
+      background: #2d2926;
+      color: #f5c49a;
+      padding: 4px 10px;
+      border-radius: 5px;
+      white-space: nowrap;
+    }
+
+    /* ── LOCAL vs PROD ──────────────────────────────────────── */
+    .compare-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    @media (max-width: 600px) {
+      .compare-grid { grid-template-columns: 1fr; }
+    }
+    .compare-card {
+      background: #fff;
+      border: 1px solid #ede9e3;
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    .compare-card-header {
+      padding: 16px 22px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .compare-card-header.local { background: #f5f0eb; border-bottom: 2px solid #c5bfb7; }
+    .compare-card-header.prod  { background: #fff5f1; border-bottom: 2px solid #d97757; }
+    .compare-card-header .ch-icon { font-size: 24px; }
+    .compare-card-header h3 {
+      font-size: 16px;
+      font-weight: 700;
+      color: #2d2926;
+    }
+    .compare-card-header p {
+      font-size: 12px;
+      color: #8a8078;
+    }
+    .compare-rows { padding: 16px 0; }
+    .compare-row {
+      display: flex;
+      gap: 12px;
+      padding: 10px 22px;
+      border-bottom: 1px solid #f5f0eb;
+      align-items: flex-start;
+    }
+    .compare-row:last-child { border-bottom: none; }
+    .cr-key {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: #a09088;
+      width: 90px;
+      flex-shrink: 0;
+      padding-top: 2px;
+    }
+    .cr-val {
+      font-size: 13px;
+      color: #4a4540;
+      line-height: 1.5;
+      flex: 1;
+    }
+
+    /* ── FOOTER ─────────────────────────────────────────────── */
+    .site-footer {
+      background: #2d2926;
+      color: rgba(255,255,255,0.5);
+      text-align: center;
+      padding: 24px 32px;
+      font-size: 13px;
+    }
+    .site-footer strong { color: #d97757; }
+
+    /* ── DIVIDER ────────────────────────────────────────────── */
+    .divider {
+      height: 1px;
+      background: linear-gradient(to right, transparent, #e0dbd3, transparent);
+      margin: 0 0 56px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════ HEADER ═══════════════════ -->
+<header class="site-header">
+  <div class="header-inner">
+    <p class="header-eyebrow">Internal Documentation</p>
+    <h1 class="header-title">Data Platform Portal<br><span>Architecture Overview</span></h1>
+    <div class="header-meta">
+      <span class="header-badge">📅 <strong>2026-03-10</strong></span>
+      <span class="header-badge">☁️ Azure Container Apps · <strong>australiaeast</strong></span>
+      <span class="header-badge">⚡ Databricks Unity Catalog · <strong>dev</strong></span>
+      <span class="header-badge">🎯 Audience: <strong>Non-Technical Team</strong></span>
+    </div>
+  </div>
+</header>
+
+<main class="page-body">
+
+  <!-- ══════════════ SECTION 1 — WHAT IS IT ══════════════ -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-number">1</div>
+      <h2 class="section-title"><span class="section-icon">🏗️</span> What is the Data Platform Portal?</h2>
+    </div>
+
+    <div class="card">
+      <p>The <strong>Data Platform Portal</strong> is a self-service web application that lets the team configure, deploy, and monitor data ingestion pipelines — <strong>without writing a single line of code</strong>. It acts as a friendly front-end sitting on top of the powerful Bronze + Silver data framework already running in Databricks.</p>
+      <p>Think of it as a control panel: instead of editing configuration files and running scripts directly, team members use a clean web interface to point-and-click their way to production-ready data pipelines.</p>
+    </div>
+
+    <div class="intro-grid">
+      <div class="intro-feature">
+        <div class="feat-icon">🔌</div>
+        <h4>Connect Data Sources</h4>
+        <p>Hook up files, databases, APIs and event streams through a guided UI — no YAML expertise needed.</p>
+      </div>
+      <div class="intro-feature">
+        <div class="feat-icon">🚀</div>
+        <h4>Deploy to Databricks</h4>
+        <p>One click pushes a fully configured ingestion job to the Databricks workspace in the cloud.</p>
+      </div>
+      <div class="intro-feature">
+        <div class="feat-icon">🤖</div>
+        <h4>AI Pipeline Builder</h4>
+        <p>Describe what data you need in plain English — the AI assistant generates the configuration for you.</p>
+      </div>
+      <div class="intro-feature">
+        <div class="feat-icon">🧪</div>
+        <h4>Built-in Testing</h4>
+        <p>Run automated test suites against your pipeline before going live — catch problems early.</p>
+      </div>
+      <div class="intro-feature">
+        <div class="feat-icon">📊</div>
+        <h4>Monitor & Audit</h4>
+        <p>See run history, data quality scores, and audit logs — all from one dashboard.</p>
+      </div>
+      <div class="intro-feature">
+        <div class="feat-icon">🔐</div>
+        <h4>Secure by Default</h4>
+        <p>Microsoft login protects every page. Secrets are stored safely — never in the code.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ══════════════ SECTION 2 — ARCHITECTURE ══════════════ -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-number">2</div>
+      <h2 class="section-title"><span class="section-icon">🗺️</span> The Architecture</h2>
+    </div>
+
+    <div class="arch-diagram">
+      <div class="arch-cols">
+
+        <!-- Main flow -->
+        <div class="arch-flow">
+
+          <!-- Browser -->
+          <div class="arch-box box-browser" style="max-width:480px;width:100%;">
+            <div class="box-label">User</div>
+            <div class="box-title">🌐 Team Member's Browser</div>
+            <div class="box-sub">Chrome, Firefox, Edge — any modern browser</div>
+          </div>
+
+          <div class="arch-arrow">
+            <div class="arrow-line"></div>
+            <div class="arrow-head">▼</div>
+            <div class="arrow-label">HTTPS (encrypted)</div>
+          </div>
+
+          <!-- Azure Container Apps -->
+          <div class="arch-box box-aca" style="max-width:480px;width:100%;padding-bottom:20px;">
+            <div class="box-label">Cloud Hosting</div>
+            <div class="box-title">☁️ Azure Container Apps</div>
+            <div class="box-sub">Runs 24/7 — scales automatically</div>
+            <div class="aca-inner">
+              <div class="aca-service">
+                <div class="svc-icon">🖥️</div>
+                <div class="svc-name">Frontend</div>
+                <div class="svc-tech">Next.js</div>
+                <div class="svc-desc">The web UI — pages, forms, dashboards</div>
+              </div>
+              <div class="aca-service">
+                <div class="svc-icon">⚙️</div>
+                <div class="svc-name">Backend</div>
+                <div class="svc-tech">FastAPI</div>
+                <div class="svc-desc">The brain — handles logic, stores configs, talks to Databricks</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="arch-arrow">
+            <div class="arrow-line"></div>
+            <div class="arrow-head">▼</div>
+            <div class="arrow-label">Databricks SDK (HTTPS)</div>
+          </div>
+
+          <!-- Databricks -->
+          <div class="arch-box box-databricks" style="max-width:480px;width:100%;">
+            <div class="box-label">Data Processing</div>
+            <div class="box-title">⚡ Databricks Workspace</div>
+            <div class="box-sub">adb-7405611647441205.5.azuredatabricks.net</div>
+          </div>
+
+          <div class="arch-arrow">
+            <div class="arrow-line"></div>
+            <div class="arrow-head">▼</div>
+          </div>
+
+          <!-- Delta / Lake -->
+          <div class="arch-box box-delta" style="max-width:480px;width:100%;">
+            <div class="box-label">Storage</div>
+            <div class="box-title">🗄️ Delta Tables &amp; Azure Data Lake</div>
+            <div class="box-sub">Bronze raw data · Silver clean data · Audit logs</div>
+          </div>
+
+        </div>
+
+        <!-- Supporting services -->
+        <div class="arch-services">
+          <h4>Azure Supporting Services</h4>
+
+          <div class="service-card">
+            <div class="sc-top">
+              <span class="sc-icon">📦</span>
+              <span class="sc-name">Container Registry</span>
+            </div>
+            <div class="sc-detail">dataportalacr.azurecr.io</div>
+            <div class="sc-desc">Stores packaged versions of the frontend and backend apps (Docker images) — like a private app store for containers.</div>
+          </div>
+
+          <div class="service-card">
+            <div class="sc-top">
+              <span class="sc-icon">📁</span>
+              <span class="sc-name">Azure File Shares</span>
+            </div>
+            <div class="sc-detail">Persistent Cloud Storage</div>
+            <div class="sc-desc">
+              Holds three types of data that must survive container restarts:
+              <br/>• <strong>Pipeline configs</strong> (YAML files)
+              <br/>• <strong>AI knowledge base</strong> (ChromaDB vectors)
+              <br/>• <strong>App data</strong> (run history, test results)
+            </div>
+          </div>
+
+          <div class="service-card">
+            <div class="sc-top">
+              <span class="sc-icon">🔑</span>
+              <span class="sc-name">EasyAuth</span>
+            </div>
+            <div class="sc-detail">Microsoft Identity Platform</div>
+            <div class="sc-desc">Sits in front of both containers as a "bouncer". Users must sign in with Microsoft before seeing anything.</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ══════════════ SECTION 3 — DEPLOYMENT ══════════════ -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-number">3</div>
+      <h2 class="section-title"><span class="section-icon">🚢</span> How Code Gets to Azure</h2>
+    </div>
+
+    <div class="card" style="margin-bottom:24px;">
+      <p>When a developer makes changes to the portal code, here is the path those changes travel — from a laptop to the live application used by the team.</p>
+    </div>
+
+    <div class="deploy-steps">
+
+      <div class="deploy-step">
+        <div class="deploy-step-left">
+          <div class="step-dot">1</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="step-content">
+          <div class="step-title">💻 Developer makes changes on their laptop</div>
+          <div class="step-desc">Code is edited locally — new features, bug fixes, config tweaks. The developer tests them using Docker Compose (a local copy of the whole system) before touching anything live.</div>
+        </div>
+      </div>
+
+      <div class="deploy-step">
+        <div class="deploy-step-left">
+          <div class="step-dot">2</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="step-content">
+          <div class="step-title">🔨 Run the redeploy script</div>
+          <div class="step-desc">A single command kicks off the whole build-and-publish process. The script packages the application into a Docker image — like zipping everything into a self-contained capsule.</div>
+          <div class="step-code">bash portal/redeploy.sh [backend | frontend | both]</div>
+        </div>
+      </div>
+
+      <div class="deploy-step">
+        <div class="deploy-step-left">
+          <div class="step-dot">3</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="step-content">
+          <div class="step-title">📤 Image pushed to Azure Container Registry</div>
+          <div class="step-desc">The freshly built Docker image is uploaded to <strong>dataportalacr.azurecr.io</strong> — Azure's private storage for application images. This is like uploading a new version to an app store.</div>
+        </div>
+      </div>
+
+      <div class="deploy-step">
+        <div class="deploy-step-left">
+          <div class="step-dot">4</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="step-content">
+          <div class="step-title">🔄 Azure pulls the new image and restarts</div>
+          <div class="step-desc">Azure Container Apps notices the new image in the registry, pulls it down, and gracefully swaps the running container with the new version. Existing data is untouched — it lives on the File Shares.</div>
+          <div class="step-time">⏱ ~1–2 minutes downtime</div>
+        </div>
+      </div>
+
+      <div class="deploy-step">
+        <div class="deploy-step-left">
+          <div class="step-dot">5</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="step-content">
+          <div class="step-title">✅ Team sees the update</div>
+          <div class="step-desc">Refresh the browser and the new version is live. No server maintenance, no manual restarts — the cloud handles all of that automatically.</div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ══════════════ SECTION 4 — SECURITY ══════════════ -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-number">4</div>
+      <h2 class="section-title"><span class="section-icon">🔐</span> Security &amp; Access</h2>
+    </div>
+
+    <div class="security-grid">
+
+      <div class="security-item offline">
+        <div class="status-badge status-offline"><span class="status-dot"></span> Currently Offline</div>
+        <div class="sec-icon">🚪</div>
+        <h4>Portal Access Status</h4>
+        <p>The portal URL is currently <strong>disabled</strong> (ingress turned off). Visiting the URL will return a connection error — this is intentional. To bring it online, run <code style="font-size:12px;background:#f5f0eb;padding:1px 5px;border-radius:3px;">bash portal/auth-enable.sh</code> followed by the ingress enable command.</p>
+      </div>
+
+      <div class="security-item">
+        <div class="sec-icon">🛡️</div>
+        <h4>Microsoft Login (EasyAuth)</h4>
+        <p>When the portal is online, a Microsoft identity layer sits in front of the entire application. Users are redirected to a Microsoft login page before they can see anything. Only approved accounts get through — like a bouncer at the door.</p>
+      </div>
+
+      <div class="security-item">
+        <div class="sec-icon">🔒</div>
+        <h4>Secrets — Never in Code</h4>
+        <p>Sensitive credentials (Databricks token, Anthropic API key) are stored as <strong>Azure Container Apps Secrets</strong> — a secure vault separate from the application code. Even if someone read the source code, they would not find any passwords.</p>
+      </div>
+
+      <div class="security-item">
+        <div class="sec-icon">🔐</div>
+        <h4>Encrypted in Transit</h4>
+        <p>All communication between the browser and Azure uses <strong>HTTPS</strong> (TLS encryption). All calls from the backend to Databricks are also encrypted. Data is never sent in plain text across the internet.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ══════════════ SECTION 5 — URLS ══════════════ -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-number">5</div>
+      <h2 class="section-title"><span class="section-icon">🔗</span> Key URLs &amp; Resources</h2>
+    </div>
+
+    <div class="urls-list">
+
+      <div class="url-row">
+        <span class="url-icon">🖥️</span>
+        <div class="url-info">
+          <div class="url-label">Frontend (Web Portal)</div>
+          <div class="url-value">https://data-portal-frontend.redgrass-d95a9251.australiaeast.azurecontainerapps.io</div>
+          <div class="url-desc">The main portal web interface — open this in a browser once the portal is online</div>
+        </div>
+      </div>
+
+      <div class="url-row">
+        <span class="url-icon">⚙️</span>
+        <div class="url-info">
+          <div class="url-label">Backend (API)</div>
+          <div class="url-value">https://data-portal-backend.redgrass-d95a9251.australiaeast.azurecontainerapps.io</div>
+          <div class="url-desc">The API server — the frontend talks to this automatically; developers use it for direct API calls</div>
+        </div>
+      </div>
+
+      <div class="url-row">
+        <span class="url-icon">💚</span>
+        <div class="url-info">
+          <div class="url-label">Health Check</div>
+          <div class="url-value">https://data-portal-backend.redgrass-d95a9251.australiaeast.azurecontainerapps.io/api/v1/health</div>
+          <div class="url-desc">Returns {"status": "ok"} if the backend is running — useful for quick smoke-testing after a deploy</div>
+        </div>
+      </div>
+
+      <div class="url-row">
+        <span class="url-icon">🗂️</span>
+        <div class="url-info">
+          <div class="url-label">Azure Resource Group</div>
+          <div class="url-value">data-portal-rg · Region: australiaeast</div>
+          <div class="url-desc">All Azure resources (containers, registry, file shares, networking) live in this single group in the Azure Portal</div>
+        </div>
+      </div>
+
+      <div class="url-row">
+        <span class="url-icon">📦</span>
+        <div class="url-info">
+          <div class="url-label">Container Registry</div>
+          <div class="url-value">dataportalacr.azurecr.io</div>
+          <div class="url-desc">Stores Docker images for both frontend and backend; images are tagged by date and "latest"</div>
+        </div>
+      </div>
+
+      <div class="url-row">
+        <span class="url-icon">⚡</span>
+        <div class="url-info">
+          <div class="url-label">Databricks Workspace</div>
+          <div class="url-value">adb-7405611647441205.5.azuredatabricks.net · Catalog: dev</div>
+          <div class="url-desc">The data processing engine; pipelines run here on cluster 1225-063853-8un63us8 (DBR 17.3)</div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ══════════════ SECTION 6 — SCRIPTS ══════════════ -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-number">6</div>
+      <h2 class="section-title"><span class="section-icon">🛠️</span> Management Scripts</h2>
+    </div>
+
+    <div class="card" style="margin-bottom:22px;">
+      <p>All day-to-day operations are handled through shell scripts in the <code style="font-size:13px;background:#f5f0eb;padding:1px 6px;border-radius:4px;">portal/</code> directory. Run these from the root of the project on your laptop.</p>
+    </div>
+
+    <div class="scripts-table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Script</th>
+            <th>Command</th>
+            <th>What it does</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>redeploy.sh</td>
+            <td><span class="cmd-code">bash portal/redeploy.sh [backend|frontend|both]</span></td>
+            <td>Builds a new Docker image and pushes it to Azure — the standard way to ship code changes to production.</td>
+          </tr>
+          <tr>
+            <td>auth-enable.sh</td>
+            <td><span class="cmd-code">bash portal/auth-enable.sh</span></td>
+            <td>Turns on Microsoft login (EasyAuth). Run this before making the portal URL public to the team.</td>
+          </tr>
+          <tr>
+            <td>auth-disable.sh</td>
+            <td><span class="cmd-code">bash portal/auth-disable.sh</span></td>
+            <td>Turns off Microsoft login — useful during development or debugging when you need unauthenticated access.</td>
+          </tr>
+          <tr>
+            <td>azure-deploy.sh</td>
+            <td><span class="cmd-code">bash portal/azure-deploy.sh</span></td>
+            <td>Full from-scratch deployment — provisions all Azure resources and deploys both containers. Use this to set up a brand-new environment.</td>
+          </tr>
+          <tr>
+            <td>docker-compose.yml</td>
+            <td><span class="cmd-code">docker compose -f portal/docker-compose.yml up</span></td>
+            <td>Starts the entire portal locally on your laptop for development and testing — no Azure required.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ══════════════ SECTION 7 — LOCAL vs PROD ══════════════ -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-number">7</div>
+      <h2 class="section-title"><span class="section-icon">⚖️</span> Local Development vs Production</h2>
+    </div>
+
+    <div class="card" style="margin-bottom:22px;">
+      <p>The portal can run in two modes. <strong>Local</strong> is for developers building and testing new features. <strong>Production</strong> is the live environment the team actually uses.</p>
+    </div>
+
+    <div class="compare-grid">
+
+      <div class="compare-card">
+        <div class="compare-card-header local">
+          <span class="ch-icon">💻</span>
+          <div>
+            <h3>Local Development</h3>
+            <p>Runs on a developer's laptop</p>
+          </div>
+        </div>
+        <div class="compare-rows">
+          <div class="compare-row">
+            <div class="cr-key">How to start</div>
+            <div class="cr-val"><code style="font-size:12px;background:#f5f0eb;padding:1px 5px;border-radius:3px;">docker compose up</code></div>
+          </div>
+          <div class="compare-row">
+            <div class="cr-key">Runs on</div>
+            <div class="cr-val">Your laptop — uses local ports (e.g. <em>localhost:3000</em>)</div>
+          </div>
+          <div class="compare-row">
+            <div class="cr-key">Config files</div>
+            <div class="cr-val">Local folders on your laptop's hard drive</div>
+          </div>
+          <div class="compare-row">
+            <div class="cr-key">Auth</div>
+            <div class="cr-val">No login required — open access for easy testing</div>
+          </div>
+          <div class="compare-row">
+            <div class="cr-key">Purpose</div>
+            <div class="cr-val">Develop and test new features safely before deploying</div>
+          </div>
+          <div class="compare-row">
+            <div class="cr-key">Availability</div>
+            <div class="cr-val">Only while Docker is running on your machine</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="compare-card">
+        <div class="compare-card-header prod">
+          <span class="ch-icon">☁️</span>
+          <div>
+            <h3>Production (Azure)</h3>
+            <p>Live environment for the whole team</p>
+          </div>
+        </div>
+        <div class="compare-rows">
+          <div class="compare-row">
+            <div class="cr-key">How to start</div>
+            <div class="cr-val"><code style="font-size:12px;background:#fff5f1;padding:1px 5px;border-radius:3px;">bash portal/auth-enable.sh</code> + ingress enable</div>
+          </div>
+          <div class="compare-row">
+            <div class="cr-key">Runs on</div>
+            <div class="cr-val">Azure Container Apps — public HTTPS URL</div>
+          </div>
+          <div class="compare-row">
+            <div class="cr-key">Config files</div>
+            <div class="cr-val">Azure File Shares — persisted in the cloud</div>
+          </div>
+          <div class="compare-row">
+            <div class="cr-key">Auth</div>
+            <div class="cr-val">Microsoft login required — only approved accounts</div>
+          </div>
+          <div class="compare-row">
+            <div class="cr-key">Purpose</div>
+            <div class="cr-val">The real thing — used by the full team for live pipelines</div>
+          </div>
+          <div class="compare-row">
+            <div class="cr-key">Availability</div>
+            <div class="cr-val">24/7 — Azure manages uptime and scaling automatically</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+</main>
+
+<!-- ═══════════════════ FOOTER ═══════════════════ -->
+<footer class="site-footer">
+  <p><strong>Data Platform Portal</strong> — Architecture Overview &nbsp;·&nbsp; Generated 2026-03-10 &nbsp;·&nbsp; Internal use only</p>
+  <p style="margin-top:6px;font-size:11px;">Azure Container Apps &nbsp;|&nbsp; Databricks Unity Catalog &nbsp;|&nbsp; Delta Lake &nbsp;|&nbsp; FastAPI &nbsp;|&nbsp; Next.js</p>
+</footer>
+
+</body>
+</html>

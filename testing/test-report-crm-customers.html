@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bronze Pipeline Test Report — file_crm_customers</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --cream:    #faf8f4;
+      --beige:    #f3ede3;
+      --border:   #e8ddd0;
+      --rust:     #d97757;
+      --rust-dk:  #c4613d;
+      --green:    #2d8a4e;
+      --green-bg: #edf7f1;
+      --red:      #c0392b;
+      --red-bg:   #fdf0ef;
+      --gray:     #6b5f52;
+      --text:     #2c2016;
+      --label:    #8c7b6b;
+      --mono:     'Courier New', Courier, monospace;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--cream);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 2rem;
+    }
+
+    /* ── HEADER ── */
+    .report-header {
+      background: linear-gradient(135deg, #2c2016 0%, #4a3728 100%);
+      color: #fff;
+      border-radius: 12px;
+      padding: 2rem 2.5rem;
+      margin-bottom: 2rem;
+    }
+    .report-header .tag {
+      display: inline-block;
+      background: var(--rust);
+      color: #fff;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      margin-bottom: 0.75rem;
+    }
+    .report-header h1 { font-size: 1.8rem; font-weight: 700; margin-bottom: 0.3rem; }
+    .report-header .subtitle { color: #c9bdb2; font-size: 0.95rem; }
+    .meta-row {
+      display: flex; gap: 2rem; margin-top: 1.25rem; flex-wrap: wrap;
+    }
+    .meta-item { display: flex; flex-direction: column; }
+    .meta-item .key { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: #9e8f85; }
+    .meta-item .val { font-size: 0.9rem; color: #fff; font-weight: 500; }
+
+    /* ── SUMMARY BAR ── */
+    .summary-bar {
+      display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap;
+    }
+    .summary-card {
+      flex: 1; min-width: 130px;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.1rem 1.4rem;
+      text-align: center;
+    }
+    .summary-card .count {
+      font-size: 2.2rem; font-weight: 700; line-height: 1;
+    }
+    .summary-card .label {
+      font-size: 0.78rem; color: var(--label); margin-top: 0.3rem;
+      text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .summary-card.passed .count { color: var(--green); }
+    .summary-card.failed .count { color: var(--red); }
+    .summary-card.total  .count { color: var(--rust); }
+    .summary-card.pending .count { color: #9b8b7a; }
+
+    /* ── SECTION HEADING ── */
+    .section-heading {
+      font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--label);
+      margin-bottom: 1rem; padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* ── TEST CARD ── */
+    .tc-card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 1.5rem;
+      overflow: hidden;
+    }
+    .tc-header {
+      display: flex; align-items: center; gap: 1rem;
+      padding: 1rem 1.4rem;
+      background: var(--beige);
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+    .tc-id {
+      font-size: 0.75rem; font-weight: 700; letter-spacing: 0.05em;
+      background: var(--text); color: #fff;
+      padding: 0.2rem 0.6rem; border-radius: 6px; font-family: var(--mono);
+    }
+    .tc-name { font-size: 1rem; font-weight: 600; flex: 1; }
+    .badge {
+      font-size: 0.72rem; font-weight: 700; padding: 0.22rem 0.7rem;
+      border-radius: 20px; text-transform: uppercase; letter-spacing: 0.06em;
+    }
+    .badge.passed { background: var(--green-bg); color: var(--green); }
+    .badge.failed { background: var(--red-bg);   color: var(--red);   }
+    .badge.positive { background: #eef4ff; color: #3355aa; }
+    .badge.negative { background: #fff4ee; color: #c25000; }
+
+    .tc-body { padding: 1.4rem; display: grid; gap: 1.2rem; }
+
+    /* ── COLUMNS ── */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }
+    @media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
+
+    .info-block h3 {
+      font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.07em; color: var(--label); margin-bottom: 0.5rem;
+    }
+    .info-block p { font-size: 0.9rem; color: var(--text); }
+
+    /* ── DATA TABLE ── */
+    .data-table-wrap { overflow-x: auto; }
+    .data-table {
+      width: 100%; border-collapse: collapse; font-size: 0.82rem;
+      font-family: var(--mono);
+    }
+    .data-table th {
+      background: var(--beige); text-align: left;
+      padding: 0.45rem 0.75rem; font-size: 0.7rem;
+      text-transform: uppercase; letter-spacing: 0.05em;
+      color: var(--label); border-bottom: 2px solid var(--border);
+    }
+    .data-table td {
+      padding: 0.4rem 0.75rem; border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table tr:hover td { background: var(--cream); }
+    .null-val { color: #aaa; font-style: italic; }
+    .highlight { background: #fffbea !important; }
+    .strikethrough { text-decoration: line-through; color: #aaa; }
+    .new-row td { background: #edf7f1 !important; }
+    .closed-row td { background: #fff4ee !important; }
+
+    /* ── ASSERTION LIST ── */
+    .assertions { display: grid; gap: 0.5rem; }
+    .assertion {
+      display: flex; align-items: flex-start; gap: 0.6rem;
+      padding: 0.5rem 0.7rem;
+      background: var(--cream); border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .assertion .icon { font-size: 0.9rem; margin-top: 0.05rem; flex-shrink: 0; }
+    .assertion .desc { font-size: 0.85rem; flex: 1; }
+    .assertion .vals {
+      font-size: 0.78rem; color: var(--label); font-family: var(--mono);
+      white-space: nowrap;
+    }
+    .assertion .vals span { color: var(--green); font-weight: 600; }
+
+    /* ── SQL SNIPPET ── */
+    .sql-snippet {
+      background: #1e1610; color: #e8ddd0;
+      border-radius: 8px; padding: 0.75rem 1rem;
+      font-family: var(--mono); font-size: 0.78rem;
+      overflow-x: auto; line-height: 1.7;
+    }
+    .sql-kw { color: #d97757; font-weight: 700; }
+    .sql-fn { color: #7dd3a8; }
+    .sql-str { color: #f0d98e; }
+
+    /* ── FOOTER ── */
+    .report-footer {
+      margin-top: 2.5rem; text-align: center;
+      font-size: 0.78rem; color: var(--label);
+      border-top: 1px solid var(--border); padding-top: 1.5rem;
+    }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="report-header">
+  <div class="tag">Bronze Pipeline Test Report</div>
+  <h1>file_crm_customers</h1>
+  <p class="subtitle">Source: CRM Customer Records &nbsp;|&nbsp; Target: <code>dev.bronze_test.crm_customers</code> &nbsp;|&nbsp; CDC Mode: SCD2</p>
+  <div class="meta-row">
+    <div class="meta-item"><span class="key">Environment</span><span class="val">dev</span></div>
+    <div class="meta-item"><span class="key">Primary Key</span><span class="val">customer_id</span></div>
+    <div class="meta-item"><span class="key">Sequence Column</span><span class="val">updated_at</span></div>
+    <div class="meta-item"><span class="key">Delete Marker</span><span class="val">_cdc_operation = DELETE</span></div>
+    <div class="meta-item"><span class="key">Report Date</span><span class="val">2026-03-05</span></div>
+    <div class="meta-item"><span class="key">Framework</span><span class="val">bronze_framework v1.0.0</span></div>
+  </div>
+</header>
+
+<!-- SUMMARY BAR -->
+<div class="summary-bar">
+  <div class="summary-card total">
+    <div class="count">8</div>
+    <div class="label">Total Cases</div>
+  </div>
+  <div class="summary-card passed">
+    <div class="count">8</div>
+    <div class="label">Passed</div>
+  </div>
+  <div class="summary-card failed">
+    <div class="count">0</div>
+    <div class="label">Failed</div>
+  </div>
+  <div class="summary-card pending">
+    <div class="count">0</div>
+    <div class="label">Pending</div>
+  </div>
+</div>
+
+<p class="section-heading">All Test Cases — 8 of 8 Passed</p>
+
+<!-- ══════════════════════════════════════════════════════════
+     TC001
+══════════════════════════════════════════════════════════ -->
+<div class="tc-card">
+  <div class="tc-header">
+    <span class="tc-id">TC001</span>
+    <span class="tc-name">Full Load — Insert All Baseline Records</span>
+    <span class="badge positive">Positive</span>
+    <span class="badge passed">✓ Passed</span>
+  </div>
+  <div class="tc-body">
+
+    <div class="two-col">
+      <div class="info-block">
+        <h3>What This Test Validates</h3>
+        <p>Verifies that an initial full-load batch correctly inserts <strong>all records</strong> into the bronze target table. Every row must be marked as the current version (<code>_is_current=true</code>), have a valid <code>_effective_from</code> timestamp, and produce <strong>zero quarantined records</strong> in the dead-letter table.</p>
+      </div>
+      <div class="info-block">
+        <h3>Why It Matters</h3>
+        <p>The full-load insert is the foundation of every SCD2 pipeline. If this baseline is wrong — missing rows, wrong SCD2 flags, or spurious quarantines — every downstream test builds on broken data.</p>
+      </div>
+    </div>
+
+    <div class="info-block">
+      <h3>Test Data Scenario</h3>
+      <p>Five customer records uploaded to the landing volume as <code>tc001_full_load.json</code>. Table is truncated before the run (<code>setup: [truncate_test_table]</code>).</p>
+    </div>
+
+    <div class="data-table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr><th>customer_id</th><th>first_name</th><th>last_name</th><th>email</th><th>status</th><th>updated_at</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>C001</td><td>Alice</td><td>Smith</td><td>alice@example.com</td><td>active</td><td>2024-01-10T08:00:00Z</td></tr>
+          <tr><td>C002</td><td>Bob</td><td>Jones</td><td>bob@example.com</td><td>active</td><td>2024-01-11T09:00:00Z</td></tr>
+          <tr><td>C003</td><td>Carol</td><td>White</td><td>carol@example.com</td><td>active</td><td>2024-01-12T10:00:00Z</td></tr>
+          <tr><td>C004</td><td>David</td><td>Brown</td><td>david@example.com</td><td>inactive</td><td>2024-01-13T11:00:00Z</td></tr>
+          <tr><td>C005</td><td>Eve</td><td>Davis</td><td>eve@example.com</td><td>active</td><td>2024-01-14T12:00:00Z</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="info-block">
+      <h3>Expected Outcome</h3>
+    </div>
+    <div class="assertions">
+      <div class="assertion">
+        <span class="icon">✅</span>
+        <span class="desc">5 rows inserted into <code>dev.bronze_test.crm_customers</code></span>
+        <span class="vals">expected <span>5</span> &nbsp;·&nbsp; actual <span>5</span></span>
+      </div>
+      <div class="assertion">
+        <span class="icon">✅</span>
+        <span class="desc">All 5 rows are the current version (<code>_is_current = true</code>)</span>
+        <span class="vals">expected <span>5</span> &nbsp;·&nbsp; actual <span>5</span></span>
+      </div>
+      <div class="assertion">
+        <span class="icon">✅</span>
+        <span class="desc">Zero records quarantined in dead-letter table <code>dev.bronze_meta.dead_letter_crm_customers</code></span>
+        <span class="vals">expected <span>0</span> &nbsp;·&nbsp; actual <span>0</span></span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     TC002
+══════════════════════════════════════════════════════════ -->
+<div class="tc-card">
+  <div class="tc-header">
+    <span class="tc-id">TC002</span>
+    <span class="tc-name">CDC Update — SCD2 New Version Created</span>
+    <span class="badge positive">Positive</span>
+    <span class="badge passed">✓ Passed</span>
+  </div>
+  <div class="tc-body">
+
+    <div class="two-col">
+      <div class="info-block">
+        <h3>What This Test Validates</h3>
+        <p>Verifies the core SCD2 change-detection logic. When a customer record is modified, the pipeline must <strong>close the old row</strong> (<code>_is_current=false</code>, <code>_effective_to=now</code>, <code>_cdc_operation=UPDATE</code>) and <strong>insert a new version</strong> (<code>_is_current=true</code>, <code>_effective_from=now</code>) — preserving the full history.</p>
+      </div>
+      <div class="info-block">
+        <h3>Why It Matters</h3>
+        <p>SCD2 is the most complex write path. An incorrect merge (e.g., overwriting instead of versioning, or failing to close the old row) silently destroys historical data. This test is the primary correctness gate for the CDC pipeline.</p>
+      </div>
+    </div>
+
+    <div class="info-block">
+      <h3>Test Data Scenario</h3>
+      <p>Runs immediately after TC001 (no truncate). Uploads <code>tc002_update.json</code> containing C001 with <code>status</code> changed from <strong>active → inactive</strong> and a later <code>updated_at</code> timestamp. The pipeline's record-hash check detects the change and triggers the two-step SCD2 write.</p>
+    </div>
+
+    <div class="data-table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr><th>customer_id</th><th>first_name</th><th>status</th><th>updated_at</th><th>Note</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>C001</td><td>Alice</td><td><strong>inactive</strong></td><td>2024-02-01T09:00:00Z</td><td>← changed field</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="info-block">
+      <h3>Expected State of <code>crm_customers</code> After TC002</h3>
+    </div>
+    <div class="data-table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr><th>customer_id</th><th>status</th><th>_is_current</th><th>_effective_to</th><th>_cdc_operation</th><th>Row</th></tr>
+        </thead>
+        <tbody>
+          <tr class="closed-row"><td>C001</td><td>active</td><td>false</td><td>2026-03-05 …</td><td>UPDATE</td><td>← old, closed</td></tr>
+          <tr class="new-row"><td>C001</td><td>inactive</td><td>true</td><td>NULL</td><td>UPDATE</td><td>← new, current</td></tr>
+          <tr><td>C002–C005</td><td>unchanged</td><td>true</td><td>NULL</td><td>INSERT</td><td>unchanged</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="assertions">
+      <div class="assertion">
+        <span class="icon">✅</span>
+        <span class="desc">6 total rows in table (5 original + 1 new C001 version)</span>
+        <span class="vals">expected <span>6</span> &nbsp;·&nbsp; actual <span>6</span></span>
+      </div>
+      <div class="assertion">
+        <span class="icon">✅</span>
+        <span class="desc">C001 has exactly 2 rows (1 old + 1 new)</span>
+        <span class="vals">expected <span>2</span> &nbsp;·&nbsp; actual <span>2</span></span>
+      </div>
+      <div class="assertion">
+        <span class="icon">✅</span>
+        <span class="desc">Still 5 current rows total (<code>_is_current = true</code>)</span>
+        <span class="vals">expected <span>5</span> &nbsp;·&nbsp; actual <span>5</span></span>
+      </div>
+      <div class="assertion">
+        <span class="icon">✅</span>
+        <span class="desc">Old C001 row is closed: <code>_is_current=false</code>, <code>_effective_to IS NOT NULL</code></span>
+        <span class="vals">expected <span>1</span> &nbsp;·&nbsp; actual <span>1</span></span>
+      </div>
+      <div class="assertion">
+        <span class="icon">✅</span>
+        <span class="desc">New C001 row has <code>status=inactive</code> and <code>_cdc_operation=UPDATE</code></span>
+        <span class="vals">expected <span>1</span> &nbsp;·&nbsp; actual <span>1</span></span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     TC003
+══════════════════════════════════════════════════════════ -->
+<div class="tc-card">
+  <div class="tc-header">
+    <span class="tc-id">TC003</span>
+    <span class="tc-name">Soft Delete — Row Closed in Bronze</span>
+    <span class="badge positive">Positive</span>
+    <span class="badge passed">✓ Passed</span>
+  </div>
+  <div class="tc-body">
+
+    <div class="two-col">
+      <div class="info-block">
+        <h3>What This Test Validates</h3>
+        <p>Verifies the <strong>soft-delete</strong> mechanism. When an incoming record carries the delete marker (<code>_cdc_operation=DELETE</code>), the pipeline must close the existing row in bronze (<code>_is_current=false</code>, <code>_effective_to=now</code>, <code>_cdc_operation=DELETE</code>) without physically removing any data. The deleted customer must still exist in the table for audit and recovery purposes.</p>
+      </div>
+      <div class="info-block">
+        <h3>Why It Matters</h3>
+        <p>Bronze is an immutable record of source events. Hard-deleting rows violates this contract and breaks downstream lineage. The soft-delete path is tested separately because it uses a distinct <code>WHEN MATCHED … THEN UPDATE</code> clause in the MERGE SQL — different from the change-detection UPDATE path.</p>
+      </div>
+    </div>
+
+    <div class="info-block">
+      <h3>Test Data Scenario</h3>
+      <p>Runs after TC002 (no truncate). Uploads <code>tc003_delete.json</code> containing C003 with the delete marker field set. The YAML config maps <code>delete_condition_column: _cdc_operation</code> and <code>delete_condition_value: DELETE</code>, so the pipeline recognises this as a logical delete event.</p>
+    </div>
+
+    <div class="data-table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr><th>customer_id</th><th>first_name</th><th>status</th><th>_cdc_operation</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>C003</td><td>Carol</td><td>active</td><td><strong>DELETE</strong></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="info-block">
+      <h3>Expected State of C003 After TC003</h3>
+    </div>
+    <div class="data-table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr><th>customer_id</th><th>first_name</th><th>_is_current</th><th>_effective_to</th><th>_cdc_operation</th></tr>
+        </thead>
+        <tbody>
+          <tr class="closed-row"><td>C003</td><td>Carol</td><td>false</td><td>2026-03-05 …</td><td>DELETE</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="assertions">
+      <div class="assertion">
+        <span class="icon">✅</span>
+        <span class="desc">C003 row exists in table with <code>_is_current=false</code> and <code>_cdc_operation=DELETE</code></span>
+        <span class="vals">expected <span>1</span> &nbsp;·&nbsp; actual <span>1</span></span>
+      </div>
+      <div class="assertion">
+        <span class="icon">✅</span>
+        <span class="desc">C003 is NOT in the current view (<code>_is_current=true</code>)</span>
+        <span class="vals">expected <span>0</span> &nbsp;·&nbsp; actual <span>0</span></span>
+      </div>
+      <div class="assertion">
+        <span class="icon">✅</span>
+        <span class="desc">C003 <code>_effective_to</code> is populated (row is properly closed)</span>
+        <span class="vals">expected <span>NOT NULL</span> &nbsp;·&nbsp; actual <span>NOT NULL</span></span>
+      </div>
+      <div class="assertion">
+        <span class="icon">✅</span>
+        <span class="desc">C003 record still exists (not physically deleted — immutable bronze principle)</span>
+        <span class="vals">expected <span>1</span> &nbsp;·&nbsp; actual <span>1</span></span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     TC004
+══════════════════════════════════════════════════════════ -->
+<div class="tc-card">
+  <div class="tc-header">
+    <span class="tc-id">TC004</span>
+    <span class="tc-name">Late-Arriving Data — Does Not Overwrite Newer Version</span>
+    <span class="badge positive">Positive</span>
+    <span class="badge passed">✓ Passed</span>
+  </div>
+  <div class="tc-body">
+
+    <div class="two-col">
+      <div class="info-block">
+        <h3>What This Test Validates</h3>
+        <p>Verifies that the <strong>late-arriving-data guard</strong> prevents out-of-order records from overwriting a more recent version. When a record arrives with an <code>updated_at</code> timestamp <em>older</em> than the currently stored version, the pipeline must <strong>skip the update</strong> entirely — the current row remains unchanged.</p>
+      </div>
+      <div class="info-block">
+        <h3>Why It Matters</h3>
+        <p>In real ingestion pipelines, events frequently arrive out of order due to network delays, CDC replay, or reprocessing. Without this guard, a 2020-dated record re-ingested in 2026 would silently overwrite the 2024 current version — corrupting the timeline. The guard (<code>source.updated_at &gt;= target.updated_at</code>) in the MERGE SQL prevents this.</p>
+      </div>
+    </div>
+
+    <div class="info-block">
+      <h3>Test Data Scenario (Two-Phase)</h3>
+      <p><strong>Phase 1 (baseline):</strong> <code>tc004_setup.json</code> — C006 with <code>updated_at = today</code> (recent timestamp) is uploaded and ingested first, establishing the current version.</p>
+      <p style="margin-top:0.5rem"><strong>Phase 2 (late-arriving):</strong> <code>tc004_late_arriving.json</code> — same C006 record with <code>updated_at = 2020-01-01T00:00:00Z</code> arrives. This is an old version re-delivered. The pipeline must ignore it.</p>
+    </div>
+
+    <div class="data-table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr><th>Phase</th><th>customer_id</th><th>first_name</th><th>updated_at</th><th>Expected Action</th></tr>
+        </thead>
+        <tbody>
+          <tr class="new-row"><td>1 – Baseline</td><td>C006</td><td>Frank</td><td>2026-03-05T…Z (today)</td><td>INSERT as current</td></tr>
+          <tr class="closed-row"><td>2 – Late</td><td>C006</td><td>Frank</td><td>2020-01-01T00:00:00Z</td><td>SKIP (past timestamp)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="assertions">
+      <div class="assertion">
+        <span class="icon">✅</span>
+        <span class="desc">Exactly 1 row for C006 after both runs (no duplicate version created)</span>
+        <span class="vals">expected <span>1</span> &nbsp;·&nbsp; actual <span>1</span></span>
+      </div>
+      <div class="assertion">
+        <span class="icon">✅</span>
+        <span class="desc">C006 is still current (<code>_is_current=true</code>) with the recent timestamp intact</span>
+        <span class="vals">expected <span>1</span> &nbsp;·&nbsp; actual <span>1</span></span>
+      </div>
+      <div class="assertion">
+        <span class="icon">✅</span>
+        <span class="desc">C006 <code>updated_at</code> is NOT overwritten with the 2020 value</span>
+        <span class="vals">expected <span>2020 count = 0</span> &nbsp;·&nbsp; actual <span>0</span></span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     TC006
+══════════════════════════════════════════════════════════ -->
+<div class="tc-card">
+  <div class="tc-header">
+    <span class="tc-id">TC006</span>
+    <span class="tc-name">Duplicate in Same Batch — Exactly One Row in Target</span>
+    <span class="badge negative">Negative</span>
+    <span class="badge passed">✓ Passed</span>
+  </div>
+  <div class="tc-body">
+
+    <div class="two-col">
+      <div class="info-block">
+        <h3>What This Test Validates</h3>
+        <p>Verifies that when the <strong>same record appears twice</strong> in a single batch, the pipeline deduplicates before writing and inserts <strong>exactly one row</strong> into the target table. The deduplication strategy keeps the latest version by <code>updated_at</code> (the sequence column).</p>
+      </div>
+      <div class="info-block">
+        <h3>Why It Matters</h3>
+        <p>Source systems frequently emit duplicate events (retries, at-least-once delivery, double-click submissions). A Bronze layer that doesn't deduplicate will create phantom SCD2 history rows, inflate row counts, and mislead downstream aggregations.</p>
+      </div>
+    </div>
+
+    <div class="info-block">
+      <h3>Test Data Scenario</h3>
+      <p>Table truncated before the run. <code>tc006_duplicate.json</code> contains the C001 record twice — identical lines in the same NDJSON file. Both records have the same primary key and identical timestamps, so they hash to the same <code>_record_hash</code>.</p>
+    </div>
+
+    <div class="data-table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr><th>#</th><th>customer_id</th><th>first_name</th><th>status</th><th>updated_at</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Row 1</td><td>C001</td><td>Alice</td><td>active</td><td>2024-01-10T08:00:00Z</td></tr>
+          <tr class="closed-row"><td>Row 2 (dup)</td><td>C001</td><td>Alice</td><td>active</td><td>2024-01-10T08:00:00Z</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="assertions">
+      <div class="assertion">
+        <span class="icon">✅</span>
+        <span class="desc">Exactly 1 row in <code>crm_customers</code> (duplicate collapsed)</span>
+        <span class="vals">expected <span>1</span> &nbsp;·&nbsp; actual <span>1</span></span>
+      </div>
+      <div class="assertion">
+        <span class="icon">✅</span>
+        <span class="desc">The single row is current (<code>_is_current=true</code>)</span>
+        <span class="vals">expected <span>1</span> &nbsp;·&nbsp; actual <span>1</span></span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     TC007
+══════════════════════════════════════════════════════════ -->
+<div class="tc-card">
+  <div class="tc-header">
+    <span class="tc-id">TC007</span>
+    <span class="tc-name">Idempotency — Re-Run Same Batch Produces No Duplicates</span>
+    <span class="badge positive">Positive</span>
+    <span class="badge passed">✓ Passed</span>
+  </div>
+  <div class="tc-body">
+
+    <div class="two-col">
+      <div class="info-block">
+        <h3>What This Test Validates</h3>
+        <p>Verifies <strong>exactly-once semantics</strong>: re-running the identical batch a second time must leave the table in the same state as after the first run. No duplicate rows, no double-counted inserts, no spurious SCD2 history entries.</p>
+      </div>
+      <div class="info-block">
+        <h3>Why It Matters</h3>
+        <p>In production, pipeline jobs are frequently re-triggered due to failures, retries, or manual reruns. A non-idempotent pipeline multiplies records on every retry — the SCD2 record-hash comparison (<code>_record_hash &lt;&gt; source._record_hash</code>) acts as a natural idempotency gate and this test confirms it works correctly.</p>
+      </div>
+    </div>
+
+    <div class="info-block">
+      <h3>Test Data Scenario</h3>
+      <p>Runs immediately after TC006 (same table state: 1 row for C001). The <strong>exact same</strong> <code>tc006_duplicate.json</code> is re-uploaded and the pipeline is triggered a second time. Because the record hash of C001 hasn't changed, the MERGE finds a match but the hashes are equal — so no UPDATE is triggered and no new row is inserted.</p>
+    </div>
+
+    <div class="data-table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr><th>Run</th><th>Data Uploaded</th><th>Expected Action</th><th>Row Count After</th></tr>
+        </thead>
+        <tbody>
+          <tr class="new-row"><td>TC006 (first run)</td><td>tc006_duplicate.json</td><td>INSERT 1 row (deduped)</td><td>1</td></tr>
+          <tr><td>TC007 (re-run)</td><td>tc006_duplicate.json (same)</td><td>MERGE finds match, hash unchanged → SKIP</td><td>1 (unchanged)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="assertions">
+      <div class="assertion">
+        <span class="icon">✅</span>
+        <span class="desc">Still exactly 1 row in <code>crm_customers</code> after re-run (no duplicates added)</span>
+        <span class="vals">expected <span>1</span> &nbsp;·&nbsp; actual <span>1</span></span>
+      </div>
+      <div class="assertion">
+        <span class="icon">✅</span>
+        <span class="desc">The row is still current (<code>_is_current=true</code>)</span>
+        <span class="vals">expected <span>1</span> &nbsp;·&nbsp; actual <span>1</span></span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     TC005
+══════════════════════════════════════════════════════════ -->
+<div class="tc-card">
+  <div class="tc-header">
+    <span class="tc-id">TC005</span>
+    <span class="tc-name">Null Primary Key — Quarantined to Dead Letter</span>
+    <span class="badge negative">Negative</span>
+    <span class="badge passed">✓ Passed</span>
+  </div>
+  <div class="tc-body">
+
+    <div class="two-col">
+      <div class="info-block">
+        <h3>What This Test Validates</h3>
+        <p>Verifies that records with a <strong>null primary key</strong> are blocked from entering the bronze table and instead quarantined to <code>dev.bronze_meta.dead_letter_crm_customers</code>. The null-PK guard prevents unidentifiable records from corrupting downstream joins and SCD2 history.</p>
+      </div>
+      <div class="info-block">
+        <h3>Why It Matters</h3>
+        <p>A null primary key is fundamentally unresolvable for SCD2 — there is no key to match on for future updates or deletes. Allowing it into bronze silently creates ghost rows. The quality adapter's null-PK filter catches this at ingestion time, before the writer is ever called.</p>
+      </div>
+    </div>
+
+    <div class="info-block">
+      <h3>Test Data Scenario</h3>
+      <p>Table truncated before the run. <code>tc005_null_pk.json</code> contains one record with <code>"customer_id": null</code> and otherwise valid fields. The quality adapter identifies it via <code>col("customer_id").isNull()</code>, routes it to <code>quarantine()</code>, and the writer receives an empty good-data frame.</p>
+    </div>
+
+    <div class="data-table-wrap">
+      <table class="data-table">
+        <thead><tr><th>customer_id</th><th>first_name</th><th>status</th><th>Classification</th></tr></thead>
+        <tbody>
+          <tr class="closed-row"><td><em class="null-val">null</em></td><td>Ghost</td><td>active</td><td>→ dead letter</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="info-block">
+      <h3>Root Cause &amp; Fix</h3>
+      <p>The <code>quarantine_threshold_pct</code> defaults to <code>10%</code>. With 1 bad record out of 1 total (100%), the engine's circuit-breaker was raising <code>RuntimeError</code> <em>before</em> calling <code>quarantine()</code>. Fix: <code>_build_test_yaml()</code> in <code>testing_service.py</code> now overrides the threshold to <code>100</code> in the test YAML, so negative tests never trip the production safeguard.</p>
+    </div>
+
+    <div class="assertions">
+      <div class="assertion">
+        <span class="icon">✅</span>
+        <span class="desc">No null-PK record in <code>dev.bronze_test.crm_customers</code></span>
+        <span class="vals">expected <span>0</span> &nbsp;·&nbsp; actual <span>0</span></span>
+      </div>
+      <div class="assertion">
+        <span class="icon">✅</span>
+        <span class="desc">Null-PK record quarantined to <code>dev.bronze_meta.dead_letter_crm_customers</code></span>
+        <span class="vals">expected <span>1</span> &nbsp;·&nbsp; actual <span>1</span></span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     TC008
+══════════════════════════════════════════════════════════ -->
+<div class="tc-card">
+  <div class="tc-header">
+    <span class="tc-id">TC008</span>
+    <span class="tc-name">Audit Log — SUCCESS Entry with Correct Record Count</span>
+    <span class="badge positive">Positive</span>
+    <span class="badge passed">✓ Passed</span>
+  </div>
+  <div class="tc-body">
+
+    <div class="two-col">
+      <div class="info-block">
+        <h3>What This Test Validates</h3>
+        <p>Verifies that every pipeline run writes a <strong>SUCCESS</strong> entry to <code>dev.bronze_meta.ingestion_audit_log</code> with <code>records_written &gt;= 5</code>. This is the observability gate — if the audit log isn't being written, monitoring dashboards go blind.</p>
+      </div>
+      <div class="info-block">
+        <h3>Why It Matters</h3>
+        <p>The audit log is the primary operations tool for knowing what ran, when, and how many records were processed. Broken audit logging is a silent failure: pipelines appear to succeed while leaving no trace. This test confirms the full audit trail works end-to-end.</p>
+      </div>
+    </div>
+
+    <div class="info-block">
+      <h3>Test Data Scenario</h3>
+      <p>Table truncated before the run (clean baseline). <code>tc001_full_load.json</code> (5 valid records) is uploaded and the pipeline runs. After the teardown truncation, the audit log is queried — it records the pipeline execution independently of the target table's current state.</p>
+    </div>
+
+    <div class="assertions">
+      <div class="assertion">
+        <span class="icon">✅</span>
+        <span class="desc">At least 1 SUCCESS entry in <code>ingestion_audit_log</code> for <code>file_crm_customers_test</code></span>
+        <span class="vals">expected <span>≥ 1</span> &nbsp;·&nbsp; actual <span>44</span></span>
+      </div>
+      <div class="assertion">
+        <span class="icon">✅</span>
+        <span class="desc">At least 1 SUCCESS entry with <code>records_written ≥ 5</code></span>
+        <span class="vals">expected <span>≥ 1</span> &nbsp;·&nbsp; actual <span>30</span></span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer class="report-footer">
+  Generated by <strong>Bronze Framework Testing Service</strong> &nbsp;·&nbsp;
+  Source: <code>file_crm_customers</code> &nbsp;·&nbsp;
+  Schema: <code>dev.bronze_test</code> &nbsp;·&nbsp;
+  2026-03-05
+</footer>
+
+</body>
+</html>

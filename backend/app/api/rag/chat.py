@@ -24,6 +24,11 @@ async def chat(
     tenant_id: str = Depends(get_current_tenant),
     rag_svc: RAGService = Depends(get_rag_service),
 ):
+    """Answer a user question using the tenant's currently-selected AI model.
+
+    No provider-specific key is pulled here — the RAG service resolves the key
+    via ai_client_service based on the tenant's selected model.
+    """
     session_id = req.session_id or secrets.token_urlsafe(16)
 
     result = rag_svc.answer(

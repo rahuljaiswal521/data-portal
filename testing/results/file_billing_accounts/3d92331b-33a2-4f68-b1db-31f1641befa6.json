@@ -1,0 +1,56 @@
+{
+  "run_id": "3d92331b-33a2-4f68-b1db-31f1641befa6",
+  "source_name": "file_billing_accounts",
+  "started_at": "2026-03-08T09:28:03.834452Z",
+  "completed_at": "2026-03-08T09:33:03.968456Z",
+  "duration_seconds": 300.134004,
+  "overall_status": "CANCELLED",
+  "environment": "dev",
+  "tester": "portal-test-framework",
+  "summary": {
+    "total": 8,
+    "passed": 0,
+    "failed": 0,
+    "skipped": 0
+  },
+  "test_cases": [
+    {
+      "id": "TC001",
+      "name": "Full load — insert all baseline records",
+      "category": "insert",
+      "positive": true,
+      "status": "PASSED",
+      "duration_seconds": 1812.5,
+      "assertions": [
+        {
+          "type": "row_count",
+          "description": "5 records inserted",
+          "expected": 5,
+          "actual": 5,
+          "passed": true,
+          "sql": "SELECT COUNT(*) FROM dev.bronze_test.billing_accounts",
+          "error": null
+        },
+        {
+          "type": "row_count",
+          "description": "All 5 records are current",
+          "expected": 5,
+          "actual": 5,
+          "passed": true,
+          "sql": "SELECT COUNT(*) FROM dev.bronze_test.billing_accounts WHERE _is_current = true",
+          "error": null
+        },
+        {
+          "type": "row_count",
+          "description": "No quarantined records",
+          "expected": 0,
+          "actual": 0,
+          "passed": true,
+          "sql": "SELECT COUNT(*) FROM dev.bronze_meta.dead_letter_billing_accounts",
+          "error": null
+        }
+      ],
+      "error": null
+    }
+  ]
+}
