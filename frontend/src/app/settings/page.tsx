@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { KeyRound, Trash2, CheckCircle2, AlertCircle, Loader2, Cpu } from "lucide-react";
+import { KeyRound, Trash2, CheckCircle2, AlertCircle, Loader2, Cpu, Database, Plug } from "lucide-react";
 import { api } from "@/lib/api";
 import type { AccountSettingsResponse, AvailableModel, ProviderKeyStatus } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -238,6 +238,214 @@ function ModelSelector({
   );
 }
 
+function DatabricksCard({
+  settings,
+  onChanged,
+}: {
+  settings: AccountSettingsResponse;
+  onChanged: (updated: AccountSettingsResponse) => void;
+}) {
+  const { toast } = useToast();
+  const [host, setHost] = useState("");
+  const [token, setToken] = useState("");
+  const [warehouseId, setWarehouseId] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [removing, setRemoving] = useState(false);
+  const [testResult, setTestResult] = useState<{ ok: boolean; message: string; user?: string | null } | null>(null);
+
+  const status = settings.databricks;
+  const configured = status?.configured ?? false;
+
+  const formValid = host.trim().length >= 8 && token.trim().length >= 8 && warehouseId.trim().length >= 4;
+
+  async function handleTest() {
+    if (!formValid) return;
+    setTesting(true);
+    setTestResult(null);
+    try {
+      const res = await api.testDatabricksConnection({
+        host: host.trim(),
+        token: token.trim(),
+        warehouse_id: warehouseId.trim(),
+      });
+      setTestResult({ ok: res.ok, message: res.message, user: res.user });
+    } catch (err: any) {
+      setTestResult({ ok: false, message: err.message || "Test failed" });
+    } finally {
+      setTesting(false);
+    }
+  }
+
+  async function handleSave(e: React.FormEvent) {
+    e.preventDefault();
+    if (!formValid) return;
+    setSaving(true);
+    try {
+      const updated = await api.setDatabricksCredentials({
+        host: host.trim(),
+        token: token.trim(),
+        warehouse_id: warehouseId.trim(),
+      });
+      onChanged(updated);
+      setHost("");
+      setToken("");
+      setWarehouseId("");
+      setTestResult(null);
+      toast("Databricks credentials saved", "success");
+    } catch (err: any) {
+      toast(err.message || "Failed to save credentials", "error");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleRemove() {
+    setRemoving(true);
+    try {
+      const updated = await api.deleteDatabricksCredentials();
+      onChanged(updated);
+      toast("Databricks credentials removed", "success");
+    } catch (err: any) {
+      toast(err.message || "Failed to remove credentials", "error");
+    } finally {
+      setRemoving(false);
+    }
+  }
+
+  return (
+    <div className="bg-bg-card border border-border rounded-xl p-6 mb-6">
+      <div className="flex items-center justify-between mb-1">
+        <div className="flex items-center gap-2">
+          <Database size={16} className="text-accent" />
+          <h2 className="text-base font-semibold text-text-primary">Databricks Workspace</h2>
+        </div>
+        {configured ? (
+          <span className="inline-flex items-center gap-1 text-xs font-medium text-green-600 bg-green-50 border border-green-200 rounded-full px-2 py-0.5">
+            <CheckCircle2 size={11} />
+            Configured
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1 text-xs font-medium text-text-tertiary bg-bg-secondary border border-border rounded-full px-2 py-0.5">
+            Not set
+          </span>
+        )}
+      </div>
+      <p className="text-sm text-text-secondary mb-4">
+        Required for Bronze, Silver, Gold, and Testing pages. Each user supplies their own
+        workspace. Credentials are stored server-side and never returned in full.
+      </p>
+
+      {configured && status && (
+        <div className="bg-bg-secondary border border-border rounded-lg px-3 py-2 mb-4 space-y-1">
+          <div className="flex justify-between text-xs">
+            <span className="text-text-tertiary">Host</span>
+            <span className="font-mono text-text-secondary">{status.host_preview}</span>
+          </div>
+          <div className="flex justify-between text-xs">
+            <span className="text-text-tertiary">Warehouse ID</span>
+            <span className="font-mono text-text-secondary">{status.warehouse_id}</span>
+          </div>
+          <div className="pt-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleRemove}
+              disabled={removing}
+              className="text-error hover:text-error hover:bg-error/5 h-6 px-2 text-xs"
+            >
+              {removing ? <Loader2 size={11} className="animate-spin" /> : <Trash2 size={11} />}
+              <span className="ml-1">Remove credentials</span>
+            </Button>
+          </div>
+        </div>
+      )}
+
+      <form onSubmit={handleSave} className="space-y-3">
+        <div>
+          <label className="block text-xs font-medium text-text-secondary mb-1">
+            Workspace URL
+          </label>
+          <input
+            type="text"
+            value={host}
+            onChange={(e) => setHost(e.target.value)}
+            placeholder="https://adb-xxxxxxxxxxxxxxxx.x.azuredatabricks.net"
+            className="w-full rounded-md border border-border bg-bg-primary px-3 py-2 text-xs
+                       text-text-primary placeholder:text-text-tertiary font-mono
+                       focus:outline-none focus:ring-1 focus:ring-accent"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-text-secondary mb-1">
+            Personal Access Token
+          </label>
+          <input
+            type="password"
+            value={token}
+            onChange={(e) => setToken(e.target.value)}
+            placeholder="dapi..."
+            className="w-full rounded-md border border-border bg-bg-primary px-3 py-2 text-xs
+                       text-text-primary placeholder:text-text-tertiary font-mono
+                       focus:outline-none focus:ring-1 focus:ring-accent"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-text-secondary mb-1">
+            SQL Warehouse ID
+          </label>
+          <input
+            type="text"
+            value={warehouseId}
+            onChange={(e) => setWarehouseId(e.target.value)}
+            placeholder="abcd1234efgh5678"
+            className="w-full rounded-md border border-border bg-bg-primary px-3 py-2 text-xs
+                       text-text-primary placeholder:text-text-tertiary font-mono
+                       focus:outline-none focus:ring-1 focus:ring-accent"
+          />
+        </div>
+
+        {testResult && (
+          <div
+            className={`flex items-start gap-2 rounded-lg px-3 py-2 text-xs ${
+              testResult.ok
+                ? "bg-green-50 border border-green-200 text-green-700"
+                : "bg-error/5 border border-error/20 text-text-secondary"
+            }`}
+          >
+            {testResult.ok ? (
+              <CheckCircle2 size={12} className="mt-0.5 shrink-0 text-green-600" />
+            ) : (
+              <AlertCircle size={12} className="mt-0.5 shrink-0 text-error" />
+            )}
+            <span>
+              {testResult.message}
+              {testResult.user ? <> — signed in as <span className="font-mono">{testResult.user}</span></> : null}
+            </span>
+          </div>
+        )}
+
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={handleTest}
+            disabled={!formValid || testing}
+          >
+            {testing ? <Loader2 size={12} className="animate-spin mr-1" /> : <Plug size={12} className="mr-1" />}
+            {testing ? "Testing…" : "Test connection"}
+          </Button>
+          <Button type="submit" size="sm" disabled={!formValid || saving}>
+            {saving ? <Loader2 size={12} className="animate-spin mr-1" /> : null}
+            {saving ? "Saving…" : configured ? "Replace" : "Save"}
+          </Button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
 export default function SettingsPage() {
   const { toast } = useToast();
   const [settings, setSettings] = useState<AccountSettingsResponse | null>(null);
@@ -271,6 +479,9 @@ export default function SettingsPage() {
         </div>
       ) : settings ? (
         <>
+          {/* Databricks credentials */}
+          <DatabricksCard settings={settings} onChanged={setSettings} />
+
           {/* Active model selector */}
           <ModelSelector settings={settings} models={models} onChanged={setSettings} />
 

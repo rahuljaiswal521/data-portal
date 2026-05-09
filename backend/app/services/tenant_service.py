@@ -54,6 +54,9 @@ class TenantService:
                 "display_name TEXT",
                 "role TEXT DEFAULT 'user'",
                 "last_login TEXT",
+                "databricks_host TEXT",
+                "databricks_token TEXT",
+                "databricks_warehouse_id TEXT",
             ):
                 try:
                     conn.execute(f"ALTER TABLE tenants ADD COLUMN {col}")
@@ -215,6 +218,54 @@ class TenantService:
                 (tenant_id,),
             ).fetchone()
         return row["gemini_api_key"] if row else None
+
+    # ── Databricks credentials ────────────────────────────────────────────────
+
+    def set_databricks_credentials(
+        self,
+        tenant_id: str,
+        host: str,
+        token: str,
+        warehouse_id: str,
+    ) -> None:
+        """Store the tenant's Databricks workspace credentials.
+
+        All three fields are stored together — clearing any one is treated as
+        clearing all. Stored server-side; the token is never returned to the
+        client (only a host preview is exposed).
+        """
+        with self._get_conn() as conn:
+            conn.execute(
+                "UPDATE tenants SET databricks_host = ?, databricks_token = ?, "
+                "databricks_warehouse_id = ? WHERE id = ?",
+                (host, token, warehouse_id, tenant_id),
+            )
+
+    def clear_databricks_credentials(self, tenant_id: str) -> None:
+        """Remove the tenant's Databricks credentials (all three fields)."""
+        with self._get_conn() as conn:
+            conn.execute(
+                "UPDATE tenants SET databricks_host = NULL, databricks_token = NULL, "
+                "databricks_warehouse_id = NULL WHERE id = ?",
+                (tenant_id,),
+            )
+
+    def get_databricks_credentials(self, tenant_id: str) -> Optional[dict]:
+        """Return {host, token, warehouse_id} or None if any field is missing."""
+        with self._get_conn() as conn:
+            row = conn.execute(
+                "SELECT databricks_host, databricks_token, databricks_warehouse_id "
+                "FROM tenants WHERE id = ?",
+                (tenant_id,),
+            ).fetchone()
+        if not row:
+            return None
+        host = row["databricks_host"]
+        token = row["databricks_token"]
+        warehouse_id = row["databricks_warehouse_id"]
+        if not host or not token or not warehouse_id:
+            return None
+        return {"host": host, "token": token, "warehouse_id": warehouse_id}
 
     # ── Selected model ────────────────────────────────────────────────────────
 

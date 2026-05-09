@@ -67,6 +67,7 @@ from app.dependencies import (
     get_silver_modeling_service,
     get_tenant_service,
     get_testing_service,
+    require_databricks_service,
 )
 from app.main import app
 from app.services.audit_service import AuditService
@@ -255,6 +256,10 @@ def client(
         get_config_service: lambda: config_svc,
         get_deploy_service: lambda: deploy_svc,
         get_databricks_service: lambda: mock_db,
+        # Bypass the 412 gate in deploy/trigger endpoints — tests work
+        # against the underlying mock_db directly. The gate behaviour is
+        # exercised separately in test_databricks_settings.py.
+        require_databricks_service: lambda: mock_db,
         get_git_service: lambda: mock_git,
         get_audit_service: lambda: mock_audit,
         get_rag_service: lambda: mock_rag,

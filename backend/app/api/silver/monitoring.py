@@ -6,13 +6,14 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends
 
-from app.dependencies import get_silver_config_service
+from app.dependencies import get_databricks_service, get_silver_config_service
 from app.models.silver_responses import (
     SilverDashboardStats,
     SilverDiagramResponse,
     SilverRunHistoryResponse,
     SilverRunRecord,
 )
+from app.services.databricks_service import DatabricksService
 from app.services.silver_config_service import SilverConfigService
 
 logger = logging.getLogger(__name__)
@@ -49,6 +50,7 @@ def get_entity_runs(
     name: str,
     limit: int = 50,
     config_svc: SilverConfigService = Depends(get_silver_config_service),
+    db: DatabricksService = Depends(get_databricks_service),
 ):
     """Get run history for a Silver entity from the audit log.
 
@@ -60,8 +62,6 @@ def get_entity_runs(
 
     # Query audit log via Databricks SQL
     try:
-        from app.dependencies import get_databricks_service
-        db = get_databricks_service()
         if not db.available:
             return SilverRunHistoryResponse(entity_name=name, runs=[], total=0)
 

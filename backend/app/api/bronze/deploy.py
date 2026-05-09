@@ -2,14 +2,18 @@
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from app.dependencies import get_deploy_service
+from app.dependencies import get_deploy_service, require_databricks_service
 from app.models.responses import SourceCreateResponse
 from app.services.deploy_service import DeployService
 
 router = APIRouter()
 
 
-@router.post("/sources/{name}/deploy", response_model=SourceCreateResponse)
+@router.post(
+    "/sources/{name}/deploy",
+    response_model=SourceCreateResponse,
+    dependencies=[Depends(require_databricks_service)],
+)
 def redeploy_source(
     name: str,
     deploy_svc: DeployService = Depends(get_deploy_service),
@@ -22,7 +26,10 @@ def redeploy_source(
         raise HTTPException(status_code=502, detail=str(e))
 
 
-@router.post("/sources/{name}/trigger")
+@router.post(
+    "/sources/{name}/trigger",
+    dependencies=[Depends(require_databricks_service)],
+)
 def trigger_run(
     name: str,
     deploy_svc: DeployService = Depends(get_deploy_service),

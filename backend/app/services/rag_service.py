@@ -512,20 +512,19 @@ class RAGService:
             tool_results = []
             for tool_block in tool_use_blocks:
                 if tool_block.name in audit_tool_names:
-                    from app.dependencies import get_databricks_service
+                    # Reuse the per-tenant DatabricksService already held by audit_service.
                     result = execute_audit_tool(
                         tool_block.name,
                         tool_block.input,
-                        get_databricks_service(),
+                        self._audit._db,
                     )
                 elif tool_block.name in silver_tool_names:
-                    from app.dependencies import get_databricks_service
                     result = execute_silver_tool(
                         tool_block.name,
                         tool_block.input,
                         self._silver_config,
                         self._silver_deploy,
-                        get_databricks_service(),
+                        self._audit._db,
                     )
                 else:
                     result = execute_tool(

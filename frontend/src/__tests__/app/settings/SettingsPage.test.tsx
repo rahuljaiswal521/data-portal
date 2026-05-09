@@ -53,6 +53,7 @@ function makeSettings(overrides?: Partial<AccountSettingsResponse>): AccountSett
     anthropic: { configured: false, preview: null },
     openai: { configured: false, preview: null },
     gemini: { configured: false, preview: null },
+    databricks: { configured: false, host_preview: null, warehouse_id: null },
     selected_model: "claude-sonnet-4-5-20250929",
     selected_provider: "anthropic",
     has_anthropic_key: false,
@@ -66,6 +67,11 @@ function makeSettingsAllConfigured(): AccountSettingsResponse {
     anthropic: { configured: true, preview: "sk-ant-a...EFGH" },
     openai: { configured: true, preview: "sk-proj-...WXYZ" },
     gemini: { configured: true, preview: "AIzaSy...1234" },
+    databricks: {
+      configured: true,
+      host_preview: "https://adb-***.azuredatabricks.net",
+      warehouse_id: "abcd1234efgh5678",
+    },
     selected_model: "claude-sonnet-4-5-20250929",
     selected_provider: "anthropic",
     has_anthropic_key: true,
@@ -166,8 +172,9 @@ describe("SettingsPage — no keys configured", () => {
   it("all three providers show 'Not set' badge", async () => {
     await act(async () => renderPage());
     await waitFor(() => {
+      // 3 AI providers + 1 Databricks card all show "Not set" by default
       const badges = screen.getAllByText("Not set");
-      expect(badges).toHaveLength(3);
+      expect(badges).toHaveLength(4);
     });
   });
 
@@ -212,8 +219,9 @@ describe("SettingsPage — all keys configured", () => {
   it("shows 'Configured' badge for all three providers", async () => {
     await act(async () => renderPage());
     await waitFor(() => {
+      // 3 AI providers + 1 Databricks card all show "Configured"
       const badges = screen.getAllByText("Configured");
-      expect(badges).toHaveLength(3);
+      expect(badges).toHaveLength(4);
     });
   });
 
@@ -256,8 +264,9 @@ describe("SettingsPage — all keys configured", () => {
   it("shows Remove buttons for configured providers", async () => {
     await act(async () => renderPage());
     await waitFor(() => {
+      // 3 AI provider Remove buttons + 1 Databricks "Remove credentials"
       const removeButtons = screen.getAllByRole("button", { name: /Remove/i });
-      expect(removeButtons).toHaveLength(3);
+      expect(removeButtons).toHaveLength(4);
     });
   });
 });
@@ -271,9 +280,10 @@ describe("SettingsPage — partial configuration", () => {
     );
     await act(async () => renderPage());
     await waitFor(() => {
+      // Anthropic configured + (OpenAI, Gemini, Databricks) not set
       expect(screen.getByText("Configured")).toBeInTheDocument();
       const notSet = screen.getAllByText("Not set");
-      expect(notSet).toHaveLength(2);
+      expect(notSet).toHaveLength(3);
     });
   });
 
@@ -302,11 +312,13 @@ describe("SettingsPage — save key interactions", () => {
     await act(async () => renderPage());
     await waitFor(() => screen.getByPlaceholderText(/sk-ant/i));
 
-    const input = screen.getByPlaceholderText(/sk-ant/i);
+    const input = screen.getByPlaceholderText(/sk-ant/i) as HTMLInputElement;
     fireEvent.change(input, { target: { value: "sk-ant-api03-testkey12345" } });
 
-    const saveBtns = screen.getAllByRole("button", { name: /Save/i });
-    await act(async () => fireEvent.click(saveBtns[0]));
+    // Submit the Anthropic-specific form (input's enclosing form). Multiple Save
+    // buttons now exist (Databricks card + 3 AI providers) — submit by form.
+    const form = input.closest("form")!;
+    await act(async () => fireEvent.submit(form));
 
     await waitFor(() => {
       expect(mockedSetProviderKey).toHaveBeenCalledWith("anthropic", "sk-ant-api03-testkey12345");
@@ -317,11 +329,11 @@ describe("SettingsPage — save key interactions", () => {
     await act(async () => renderPage());
     await waitFor(() => screen.getByPlaceholderText(/sk-ant/i));
 
-    const input = screen.getByPlaceholderText(/sk-ant/i);
+    const input = screen.getByPlaceholderText(/sk-ant/i) as HTMLInputElement;
     fireEvent.change(input, { target: { value: "sk-ant-api03-testkey12345" } });
 
-    const saveBtns = screen.getAllByRole("button", { name: /Save/i });
-    await act(async () => fireEvent.click(saveBtns[0]));
+    const form = input.closest("form")!;
+    await act(async () => fireEvent.submit(form));
 
     await waitFor(() => {
       expect(mockToast).toHaveBeenCalledWith(expect.stringContaining("saved"), "success");

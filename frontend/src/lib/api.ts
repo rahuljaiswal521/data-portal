@@ -3,6 +3,8 @@ import type {
   AccountSettingsResponse,
   AvailableModelsResponse,
   ChatResponse,
+  DatabricksCredentialsUpdate,
+  DatabricksTestConnectionResponse,
   CurrentUser,
   IndexStatus,
   LoginRequest,
@@ -148,6 +150,20 @@ export const api = {
     }),
   deleteAnthropicKey: () =>
     request<AccountSettingsResponse>("/account/settings/anthropic-key", { method: "DELETE" }),
+  // Databricks credentials
+  setDatabricksCredentials: (creds: DatabricksCredentialsUpdate) =>
+    request<AccountSettingsResponse>("/account/settings/databricks", {
+      method: "PUT",
+      body: JSON.stringify(creds),
+    }),
+  deleteDatabricksCredentials: () =>
+    request<AccountSettingsResponse>("/account/settings/databricks", { method: "DELETE" }),
+  testDatabricksConnection: (creds: DatabricksCredentialsUpdate) =>
+    request<DatabricksTestConnectionResponse>("/account/settings/databricks/test", {
+      method: "POST",
+      body: JSON.stringify(creds),
+    }),
+
   // Model selection
   listAvailableModels: () =>
     request<AvailableModelsResponse>("/account/settings/models"),

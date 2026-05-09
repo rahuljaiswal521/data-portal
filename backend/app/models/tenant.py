@@ -28,6 +28,18 @@ class ProviderKeyStatus(BaseModel):
     preview: Optional[str] = None  # e.g. "sk-ant-...XXXX"
 
 
+class DatabricksCredentialsStatus(BaseModel):
+    """Read-only view of a tenant's Databricks credentials.
+
+    The token is never echoed back to the client — only the host preview
+    (e.g. ``https://adb-***.azuredatabricks.net``) and warehouse_id.
+    """
+
+    configured: bool
+    host_preview: Optional[str] = None
+    warehouse_id: Optional[str] = None
+
+
 class AvailableModel(BaseModel):
     id: str
     name: str
@@ -39,6 +51,7 @@ class AccountSettingsResponse(BaseModel):
     anthropic: ProviderKeyStatus
     openai: ProviderKeyStatus
     gemini: ProviderKeyStatus
+    databricks: DatabricksCredentialsStatus
     selected_model: str
     selected_provider: str
     # Legacy fields kept for backward compatibility
@@ -61,3 +74,17 @@ class SelectedModelUpdate(BaseModel):
 
 class AccountSettingsUpdate(BaseModel):
     anthropic_api_key: str = Field(..., min_length=10)
+
+
+class DatabricksCredentialsUpdate(BaseModel):
+    """Payload for setting / testing Databricks credentials."""
+
+    host: str = Field(..., min_length=8, max_length=500)
+    token: str = Field(..., min_length=8, max_length=500)
+    warehouse_id: str = Field(..., min_length=4, max_length=100)
+
+
+class DatabricksTestConnectionResponse(BaseModel):
+    ok: bool
+    message: str
+    user: Optional[str] = None

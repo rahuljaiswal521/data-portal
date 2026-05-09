@@ -234,10 +234,29 @@ export interface AvailableModelsResponse {
   default_model: string;
 }
 
+export interface DatabricksCredentialsStatus {
+  configured: boolean;
+  host_preview: string | null;
+  warehouse_id: string | null;
+}
+
+export interface DatabricksCredentialsUpdate {
+  host: string;
+  token: string;
+  warehouse_id: string;
+}
+
+export interface DatabricksTestConnectionResponse {
+  ok: boolean;
+  message: string;
+  user: string | null;
+}
+
 export interface AccountSettingsResponse {
   anthropic: ProviderKeyStatus;
   openai: ProviderKeyStatus;
   gemini: ProviderKeyStatus;
+  databricks: DatabricksCredentialsStatus;
   selected_model: string;
   selected_provider: AIProvider;
   // legacy

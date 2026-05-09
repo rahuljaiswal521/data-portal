@@ -11,21 +11,63 @@ logger = logging.getLogger(__name__)
 
 
 class DatabricksService:
-    def __init__(self) -> None:
+    """Per-tenant wrapper over the Databricks SDK.
+
+    Construct with explicit ``host`` / ``token`` / ``warehouse_id`` (per-tenant
+    credentials) — passing ``None`` for any of them yields an unavailable
+    instance whose Databricks-touching methods return None / raise.
+
+    The constructor falls back to env-var settings only when ALL three
+    arguments are None. This preserves backward compatibility for tests and
+    legacy callers that rely on the singleton-with-env behaviour.
+    """
+
+    def __init__(
+        self,
+        host: Optional[str] = None,
+        token: Optional[str] = None,
+        warehouse_id: Optional[str] = None,
+    ) -> None:
+        # Back-compat: when no arguments at all, use env-var settings.
+        if host is None and token is None and warehouse_id is None:
+            host = settings.databricks_host
+            token = settings.databricks_token
+            warehouse_id = settings.databricks_warehouse_id
+
+        self._host = host
+        self._token = token
+        self._warehouse_id = warehouse_id
         self._client = None
-        if settings.databricks_host and settings.databricks_token:
+        if host and token:
             try:
                 from databricks.sdk import WorkspaceClient
-                self._client = WorkspaceClient(
-                    host=settings.databricks_host,
-                    token=settings.databricks_token,
-                )
+                self._client = WorkspaceClient(host=host, token=token)
             except Exception as e:
                 logger.warning("Databricks SDK not available: %s", e)
 
     @property
     def available(self) -> bool:
         return self._client is not None
+
+    @property
+    def warehouse_id(self) -> Optional[str]:
+        """The active warehouse_id — for callers that previously read settings directly."""
+        return self._warehouse_id
+
+    def current_user_email(self) -> Optional[str]:
+        """Return the authenticated user's email, or None if not available.
+
+        Used by the test-connection endpoint to validate host + token without
+        any side-effects.
+        """
+        if not self.available:
+            return None
+        try:
+            me = self._client.current_user.me()
+            return getattr(me, "user_name", None) or getattr(me, "userName", None)
+        except Exception as e:
+            logger.warning("current_user.me() failed: %s", e)
+            return None
 
     def upload_yaml(self, local_path: str, source_name: str) -> str:
         if not self.available:
@@ -197,12 +239,12 @@ class DatabricksService:
             return False
 
     def query_sql(self, sql: str) -> List[Dict[str, Any]]:
-        if not self.available or not settings.databricks_warehouse_id:
+        if not self.available or not self._warehouse_id:
             return []
 
         try:
             result = self._client.statement_execution.execute_statement(
-                warehouse_id=settings.databricks_warehouse_id,
+                warehouse_id=self._warehouse_id,
                 statement=sql,
                 wait_timeout="30s",
             )

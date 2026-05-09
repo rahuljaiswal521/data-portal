@@ -117,9 +117,8 @@ describe("Sidebar — existing sections still render", () => {
     expect(screen.getByText("Silver Layer")).toBeInTheDocument();
   });
 
-  it("renders Coming Soon section with Gold Layer", () => {
+  it("renders Gold Layer section", () => {
     render(<Sidebar />);
-    expect(screen.getByText("Coming Soon")).toBeInTheDocument();
     expect(screen.getByText("Gold Layer")).toBeInTheDocument();
   });
 

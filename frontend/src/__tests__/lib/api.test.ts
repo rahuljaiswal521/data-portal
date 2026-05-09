@@ -196,3 +196,56 @@ describe("api.suggestEnterpriseModelStream()", () => {
     expect(result).toEqual(finalObj);
   });
 });
+
+// ── Databricks credentials ───────────────────────────────────────────────────
+
+describe("api.setDatabricksCredentials()", () => {
+  it("calls PUT /account/settings/databricks with full body", async () => {
+    global.fetch = mockFetch({ databricks: { configured: true } });
+    const creds = {
+      host: "https://adb-1234567890123456.7.azuredatabricks.net",
+      token: "dapi-secret-token",
+      warehouse_id: "abcd1234",
+    };
+    await api.setDatabricksCredentials(creds);
+    expect(global.fetch).toHaveBeenCalledWith(
+      `${BASE}/account/settings/databricks`,
+      expect.objectContaining({
+        method: "PUT",
+        body: JSON.stringify(creds),
+      })
+    );
+  });
+});
+
+describe("api.deleteDatabricksCredentials()", () => {
+  it("calls DELETE /account/settings/databricks", async () => {
+    global.fetch = mockFetch({ databricks: { configured: false } });
+    await api.deleteDatabricksCredentials();
+    expect(global.fetch).toHaveBeenCalledWith(
+      `${BASE}/account/settings/databricks`,
+      expect.objectContaining({ method: "DELETE" })
+    );
+  });
+});
+
+describe("api.testDatabricksConnection()", () => {
+  it("calls POST /account/settings/databricks/test with credentials body", async () => {
+    global.fetch = mockFetch({ ok: true, message: "Connected", user: "alice@x.com" });
+    const creds = {
+      host: "https://adb-host.azuredatabricks.net",
+      token: "dapi-token",
+      warehouse_id: "abcd1234",
+    };
+    const res = await api.testDatabricksConnection(creds);
+    expect(global.fetch).toHaveBeenCalledWith(
+      `${BASE}/account/settings/databricks/test`,
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify(creds),
+      })
+    );
+    expect(res.ok).toBe(true);
+    expect(res.user).toBe("alice@x.com");
+  });
+});

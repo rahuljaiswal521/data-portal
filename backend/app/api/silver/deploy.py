@@ -7,7 +7,7 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.config import settings
-from app.dependencies import get_silver_deploy_service
+from app.dependencies import get_silver_deploy_service, require_databricks_service
 from app.services.silver_deploy_service import SilverDeployService
 
 logger = logging.getLogger(__name__)
@@ -15,7 +15,10 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.post("/entities/{name}/deploy")
+@router.post(
+    "/entities/{name}/deploy",
+    dependencies=[Depends(require_databricks_service)],
+)
 def redeploy_entity(
     name: str,
     svc: SilverDeployService = Depends(get_silver_deploy_service),
@@ -31,7 +34,10 @@ def redeploy_entity(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/entities/{name}/trigger")
+@router.post(
+    "/entities/{name}/trigger",
+    dependencies=[Depends(require_databricks_service)],
+)
 def trigger_run(
     name: str,
     svc: SilverDeployService = Depends(get_silver_deploy_service),

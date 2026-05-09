@@ -1,6 +1,8 @@
 """Account settings endpoints — per-tenant AI configuration."""
 
-from fastapi import APIRouter, Depends
+import logging
+
+from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.common.auth import get_current_tenant
 from app.dependencies import get_tenant_service
@@ -9,12 +11,18 @@ from app.models.tenant import (
     AccountSettingsUpdate,
     AvailableModel,
     AvailableModelsResponse,
+    DatabricksCredentialsStatus,
+    DatabricksCredentialsUpdate,
+    DatabricksTestConnectionResponse,
     ProviderKeyStatus,
     ProviderKeyUpdate,
     SelectedModelUpdate,
 )
 from app.services import ai_client_service
+from app.services.databricks_service import DatabricksService
 from app.services.tenant_service import TenantService
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -24,6 +32,35 @@ def _mask_key(key: str) -> str:
     if len(key) <= 8:
         return "****"
     return key[:8] + "..." + key[-4:]
+
+
+def _mask_databricks_host(host: str) -> str:
+    """Return a partly-masked host preview like 'https://adb-***.azuredatabricks.net'."""
+    try:
+        # Show scheme + tld but mask the workspace id portion.
+        # e.g. https://adb-7405611647441205.5.azuredatabricks.net -> https://adb-***.azuredatabricks.net
+        if "adb-" in host:
+            scheme, _, rest = host.partition("adb-")
+            tld_idx = rest.find(".azuredatabricks.net")
+            if tld_idx > 0:
+                return f"{scheme}adb-***{rest[tld_idx:]}"
+        # Fallback — keep first 12 chars and last 24
+        if len(host) > 40:
+            return f"{host[:12]}***{host[-24:]}"
+        return host
+    except Exception:
+        return host
+
+
+def _build_databricks_status(tenant_id: str, tenant_svc: TenantService) -> DatabricksCredentialsStatus:
+    creds = tenant_svc.get_databricks_credentials(tenant_id)
+    if not creds:
+        return DatabricksCredentialsStatus(configured=False)
+    return DatabricksCredentialsStatus(
+        configured=True,
+        host_preview=_mask_databricks_host(creds["host"]),
+        warehouse_id=creds["warehouse_id"],
+    )
 
 
 def _build_response(tenant_id: str, tenant_svc: TenantService) -> AccountSettingsResponse:
@@ -37,6 +74,7 @@ def _build_response(tenant_id: str, tenant_svc: TenantService) -> AccountSetting
         anthropic=ProviderKeyStatus(configured=ak is not None, preview=_mask_key(ak) if ak else None),
         openai=ProviderKeyStatus(configured=ok is not None, preview=_mask_key(ok) if ok else None),
         gemini=ProviderKeyStatus(configured=gk is not None, preview=_mask_key(gk) if gk else None),
+        databricks=_build_databricks_status(tenant_id, tenant_svc),
         selected_model=selected_model,
         selected_provider=selected_provider,
         # Legacy
@@ -133,6 +171,61 @@ def list_available_models() -> AvailableModelsResponse:
         default_model=ai_client_service.DEFAULT_MODEL_ID,
     )
 
+
+# ── Databricks credentials ───────────────────────────────────────────────────
+
+@router.put("/account/settings/databricks", response_model=AccountSettingsResponse)
+def set_databricks_credentials(
+    body: DatabricksCredentialsUpdate,
+    tenant_id: str = Depends(get_current_tenant),
+    tenant_svc: TenantService = Depends(get_tenant_service),
+) -> AccountSettingsResponse:
+    """Save per-tenant Databricks credentials (host, token, warehouse_id)."""
+    tenant_svc.set_databricks_credentials(
+        tenant_id, host=body.host, token=body.token, warehouse_id=body.warehouse_id
+    )
+    return _build_response(tenant_id, tenant_svc)
+
+
+@router.delete("/account/settings/databricks", response_model=AccountSettingsResponse)
+def delete_databricks_credentials(
+    tenant_id: str = Depends(get_current_tenant),
+    tenant_svc: TenantService = Depends(get_tenant_service),
+) -> AccountSettingsResponse:
+    tenant_svc.clear_databricks_credentials(tenant_id)
+    return _build_response(tenant_id, tenant_svc)
+
+
+@router.post("/account/settings/databricks/test", response_model=DatabricksTestConnectionResponse)
+def test_databricks_connection(
+    body: DatabricksCredentialsUpdate,
+) -> DatabricksTestConnectionResponse:
+    """Test the supplied Databricks credentials without persisting them.
+
+    Builds a transient DatabricksService and calls current_user.me().
+    """
+    try:
+        db = DatabricksService(host=body.host, token=body.token, warehouse_id=body.warehouse_id)
+    except Exception as e:
+        logger.warning("Failed to instantiate DatabricksService for test: %s", e)
+        return DatabricksTestConnectionResponse(ok=False, message=f"Could not initialise client: {e}")
+
+    if not db.available:
+        return DatabricksTestConnectionResponse(
+            ok=False,
+            message="Databricks SDK unavailable or credentials rejected at init.",
+        )
+
+    email = db.current_user_email()
+    if email:
+        return DatabricksTestConnectionResponse(ok=True, message="Connected successfully", user=email)
+    return DatabricksTestConnectionResponse(
+        ok=False,
+        message="Authentication failed — check host and token.",
+    )
+
+
+# ── Model selection ──────────────────────────────────────────────────────────
 
 @router.put("/account/settings/selected-model", response_model=AccountSettingsResponse)
 def set_selected_model(
